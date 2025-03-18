@@ -8,8 +8,8 @@ void GameUpdate() {}
 void GameRender() {}
 void GameShutdown() {}
 
-const int screenWidth = 480;
-const int screenHeight = 320;
+const int screenWidth = 600;
+const int screenHeight = 960;
 
 int main()
 {
