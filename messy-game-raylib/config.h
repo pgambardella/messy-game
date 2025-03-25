@@ -29,6 +29,9 @@
 #define SPRITE_WIDTH 16
 #define SPRITE_HEIGHT 16
 
+// camera configuration
+#define CAMERA_ZOOM 1.5f
+
 // Player physics configuration
 #define PLAYER_ACCEL 7.0f
 #define PLAYER_MAX_SPEED 1.5f

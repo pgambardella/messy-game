@@ -200,8 +200,8 @@ void InitializeWorldLayout(World* world, GameCamera* camera) {
     }
 
     // Create boundary walls
-    int visibleWidthInTiles = (int)(SCREEN_WIDTH / (TILE_WIDTH * 5.0f)); // 5.0f is the zoom
-    int visibleHeightInTiles = (int)(SCREEN_HEIGHT / (TILE_HEIGHT * 5.0f));
+    int visibleWidthInTiles = (int)(SCREEN_WIDTH / (TILE_WIDTH * CAMERA_ZOOM)); 
+    int visibleHeightInTiles = (int)(SCREEN_HEIGHT / (TILE_HEIGHT * CAMERA_ZOOM));
 
     // Calculate tile positions for screen edges
     int leftEdge = (world->width / 2) - (visibleWidthInTiles / 2);
@@ -238,13 +238,13 @@ void InitializeWorldLayout(World* world, GameCamera* camera) {
 
     // Update your game->camera setup
     camera->camera.target = (Vector2){ centerX * TILE_WIDTH, centerY * TILE_HEIGHT };
-    camera->camera.zoom = 5.0f;  // Try different zoom levels
+    camera->camera.zoom = CAMERA_ZOOM; 
 
     if (camera) {
         int centerX = world->width / 2;
         int centerY = world->height / 2;
         camera->camera.target = (Vector2){ (float)(centerX * TILE_WIDTH), (float)(centerY * TILE_HEIGHT) };
-        camera->camera.zoom = 1.0f;
+        camera->camera.zoom = CAMERA_ZOOM;
     }
 }
 

@@ -99,7 +99,7 @@ void WorldRender(World* world) {
         if (currentRoom) {
             // Get the current camera (would normally be passed as parameter)
             Camera2D camera = { 0 };
-            camera.zoom = 1.0f;
+            camera.zoom = CAMERA_ZOOM;
 
             RoomRender(currentRoom, &camera);
             return;
