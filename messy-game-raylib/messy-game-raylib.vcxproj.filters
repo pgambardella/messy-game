@@ -13,10 +13,156 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\core">
+      <UniqueIdentifier>{5dc85a3e-aa76-45f4-af94-23b526041f3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\graphics">
+      <UniqueIdentifier>{05044bef-4649-41f6-9981-a0a4c7c4c9a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\input">
+      <UniqueIdentifier>{ceb8f30c-f567-480a-b6c0-e0ba30d07348}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\physics">
+      <UniqueIdentifier>{b6ac946a-b4a9-4e8b-8782-27a9fe90d5e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\entities">
+      <UniqueIdentifier>{a2869e2d-455d-4ee5-9482-843724a775a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\world">
+      <UniqueIdentifier>{b7161446-ad47-49d9-ac66-c20a13522944}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\audio">
+      <UniqueIdentifier>{a7f11a9c-cdef-4fa0-9584-53a8e956e613}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\utils">
+      <UniqueIdentifier>{b88f8c68-a8f2-4ad7-8d1f-38655714aced}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core">
+      <UniqueIdentifier>{dd34e99c-69de-4ca6-89e7-2fb995d68182}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graphics">
+      <UniqueIdentifier>{b6ac080a-9c8e-40ea-83db-5bd01b88a29c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\input">
+      <UniqueIdentifier>{ec94bfe4-74eb-4133-b973-3adb9894a5ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\physics">
+      <UniqueIdentifier>{c3748dc6-15cb-4fe6-929b-94dadaaf0012}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\entities">
+      <UniqueIdentifier>{186f1f3f-56a4-42cf-af98-894c354c6d30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\world">
+      <UniqueIdentifier>{8dd7d93b-5313-4f62-979a-599c46299f60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\audio">
+      <UniqueIdentifier>{855d5373-206f-4f6d-bcf7-4b6348095a25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{175aaf69-cc0d-4010-bb92-3ad9452c93fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\sprites">
+      <UniqueIdentifier>{894875b8-b2d8-4be0-812e-4da871b6fd4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\audio">
+      <UniqueIdentifier>{c29bb480-5656-4b0b-b45c-aa41ebc0a57c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\levels">
+      <UniqueIdentifier>{7a13614a-63d8-4b47-bbab-dbae27e7751a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platforms">
+      <UniqueIdentifier>{999474ef-905a-4918-bce5-7fb26c069881}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platforms\windows">
+      <UniqueIdentifier>{cfda4ce7-8f21-4a97-9cdf-860edf6fffba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platforms\macos">
+      <UniqueIdentifier>{9ef38778-299f-4390-a41b-93cafa7192fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platforms\linux">
+      <UniqueIdentifier>{d8221c2e-a482-47a6-9c93-8860180b3446}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platforms\web">
+      <UniqueIdentifier>{edc88a57-eb08-4f7b-a0a6-46f49cb28b15}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="player.c">
+      <Filter>Source Files\entities</Filter>
+    </ClCompile>
+    <ClCompile Include="game.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="ball.c">
+      <Filter>Source Files\entities</Filter>
+    </ClCompile>
+    <ClCompile Include="entity.c">
+      <Filter>Source Files\entities</Filter>
+    </ClCompile>
+    <ClCompile Include="input.c">
+      <Filter>Source Files\input</Filter>
+    </ClCompile>
+    <ClCompile Include="textures.c">
+      <Filter>Source Files\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="world.c">
+      <Filter>Source Files\world</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer.c">
+      <Filter>Source Files\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="camera.c">
+      <Filter>Source Files\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="room.c">
+      <Filter>Source Files\world</Filter>
+    </ClCompile>
+    <ClCompile Include="tile.c">
+      <Filter>Source Files\world</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="config.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="entity.h">
+      <Filter>Header Files\entities</Filter>
+    </ClInclude>
+    <ClInclude Include="player.h">
+      <Filter>Header Files\entities</Filter>
+    </ClInclude>
+    <ClInclude Include="ball.h">
+      <Filter>Header Files\entities</Filter>
+    </ClInclude>
+    <ClInclude Include="world.h">
+      <Filter>Header Files\world</Filter>
+    </ClInclude>
+    <ClInclude Include="tile.h">
+      <Filter>Header Files\world</Filter>
+    </ClInclude>
+    <ClInclude Include="room.h">
+      <Filter>Header Files\world</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>Header Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer.h">
+      <Filter>Header Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="textures.h">
+      <Filter>Header Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="input.h">
+      <Filter>Header Files\input</Filter>
+    </ClInclude>
+    <ClInclude Include="game.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
 </Project>

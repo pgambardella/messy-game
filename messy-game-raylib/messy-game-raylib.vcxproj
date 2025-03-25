@@ -130,7 +130,35 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ball.c" />
+    <ClCompile Include="camera.c" />
+    <ClCompile Include="entity.c" />
+    <ClCompile Include="game.c" />
+    <ClCompile Include="input.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="player.c" />
+    <ClCompile Include="renderer.c" />
+    <ClCompile Include="room.c" />
+    <ClCompile Include="textures.c" />
+    <ClCompile Include="tile.c" />
+    <ClCompile Include="world.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ball.h" />
+    <ClInclude Include="camera.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="entity.h" />
+    <ClInclude Include="game.h" />
+    <ClInclude Include="input.h" />
+    <ClInclude Include="player.h" />
+    <ClInclude Include="renderer.h" />
+    <ClInclude Include="room.h" />
+    <ClInclude Include="textures.h" />
+    <ClInclude Include="tile.h" />
+    <ClInclude Include="world.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
