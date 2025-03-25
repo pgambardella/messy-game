@@ -149,35 +149,11 @@ The game is built with a modular architecture that separates core systems:
 - Advanced puzzle mechanics
 - New enemy types
 
-## Installation & Setup
-
-### Windows
-1. Download the latest release from the GitHub repository
-2. Extract the ZIP file to your preferred location
-3. Run `MessyGame.exe`
-
-### Build from Source
-1. Clone the repository
-2. Install the required dependencies (raylib)
-3. Build using CMake:
-```
-mkdir build
-cd build
-cmake ..
-cmake --build .
-```
-
-## Contributing
-
-We welcome contributions to the project! Please check our [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on submitting code, art, or suggestions.
-
 ## Credits
 
-- **Programming**: Your development team
-- **Art**: Your art team
-- **Music**: Your music team
+- **Programming**: Paolo Gambardella
+- **Art**: Samuel Suárez
 - **Engine**: Built with raylib
-- **Special Thanks**: To all the testers and contributors
 
 ## License
 
