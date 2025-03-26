@@ -17,6 +17,7 @@
 #include "ball.h"
 #include "world.h"
 #include "input.h"
+#include "snake_boss.h"
 
  /**
   * @brief Game states enumeration
@@ -188,6 +189,32 @@ Entity* GameSetBall(Game* game, BallType ballType);
  * @return bool Whether level was loaded successfully
  */
 bool GameLoadLevel(Game* game, int levelId);
+
+/**
+* Add these function declarations to game.h (before the #endif)
+*/
+
+/**
+* @brief Set snake boss for game
+*
+* @param game Pointer to game
+* @param gridX Initial X position in grid coordinates
+* @param gridY Initial Y position in grid coordinates
+* @param initialLength Initial number of segments
+* @return Entity* Pointer to snake boss entity
+*/
+Entity* GameSetSnakeBoss(Game* game, int gridX, int gridY, int initialLength);
+
+/**
+* @brief Initialize world layout with snake boss
+*
+* Helper function to set up a world layout with a snake boss enemy.
+*
+* @param world Pointer to world
+* @param camera Pointer to camera
+*/
+void InitializeWorldLayoutWithSnakeBoss(World* world, GameCamera* camera);
+
 
 
 #endif // MESSY_GAME_GAME_H

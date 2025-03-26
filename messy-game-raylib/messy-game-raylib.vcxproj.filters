@@ -123,6 +123,9 @@
     <ClCompile Include="tile.c">
       <Filter>Source Files\world</Filter>
     </ClCompile>
+    <ClCompile Include="snake_boss.c">
+      <Filter>Source Files\entities</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h">
@@ -160,6 +163,9 @@
     </ClInclude>
     <ClInclude Include="game.h">
       <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="snake_boss.h">
+      <Filter>Header Files\entities</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

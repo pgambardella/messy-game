@@ -139,6 +139,7 @@
     <ClCompile Include="player.c" />
     <ClCompile Include="renderer.c" />
     <ClCompile Include="room.c" />
+    <ClCompile Include="snake_boss.c" />
     <ClCompile Include="textures.c" />
     <ClCompile Include="tile.c" />
     <ClCompile Include="world.c" />
@@ -153,6 +154,7 @@
     <ClInclude Include="player.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="room.h" />
+    <ClInclude Include="snake_boss.h" />
     <ClInclude Include="textures.h" />
     <ClInclude Include="tile.h" />
     <ClInclude Include="world.h" />

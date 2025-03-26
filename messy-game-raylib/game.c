@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "game.h"
 #include "config.h"
+#include "snake_boss.h"
 
  /**
   * @brief Create a new game instance
@@ -170,6 +171,15 @@ bool GameInitialize(Game* game) {
         return false;
     }
 
+    // Create snake boss
+    int centerX = game->world->width / 2;
+    int centerY = game->world->height / 2;
+    Entity* snakeBoss = GameSetSnakeBoss(game, centerX + 15, centerY, 5);
+    if (!snakeBoss) {
+        TraceLog(LOG_ERROR, "Failed to create snake boss");
+        // Continue anyway, snake boss is not critical
+    }
+
     // Set camera to follow player
     CameraFollowTarget(game->camera, game->player);
 
@@ -180,6 +190,28 @@ bool GameInitialize(Game* game) {
     game->isRunning = true;
 
     return true;
+}
+
+/**
+* @brief Run the game loop
+*
+* This function contains the main game loop, updating and rendering
+* the game until the window should close or the game ends.
+*
+* @param game Pointer to game
+*/
+void GameRun(Game* game) {
+    if (!game) return;
+
+    // Set initial game running state
+    game->isRunning = true;
+
+    // Run the game loop until window should close or game ends
+    while (!WindowShouldClose() && game->isRunning) {
+        // Update and render game
+        GameUpdate(game);
+        GameRender(game);
+    }
 }
 
 /**
@@ -237,7 +269,7 @@ void InitializeWorldLayout(World* world, GameCamera* camera) {
     }
 
     // Update your game->camera setup
-    camera->camera.target = (Vector2){ centerX * TILE_WIDTH, centerY * TILE_HEIGHT };
+    camera->camera.target = (Vector2){ (float)centerX * TILE_WIDTH, (float)centerY * TILE_HEIGHT };
     camera->camera.zoom = CAMERA_ZOOM; 
 
     if (camera) {
@@ -289,6 +321,21 @@ void GameUpdate(Game* game) {
 
         // Update world
         WorldUpdate(game->world, game->deltaTime);
+
+        /**
+* Update GameUpdate function in game.c to handle the snake boss
+* Add this code block within the main if (game->state == GAME_STATE_PLAYING) block
+* in the GameUpdate function:
+*/
+
+// Update snake boss entities
+        for (int i = 0; i < game->entityCount; i++) {
+            Entity* entity = game->entities[i];
+            if (IsSnakeBoss(entity)) {
+                // Update the snake boss
+                SnakeBossUpdate(entity, game->world, game->ball, game->player, game->deltaTime);
+            }
+        }
     }
 
     // Update camera last so it can follow updated entities
@@ -318,7 +365,11 @@ void GameRender(Game* game) {
     for (int i = 0; i < game->entityCount; i++) {
         // Skip player and ball for now (they'll be rendered separately)
         if (game->entities[i] == game->player || game->entities[i] == game->ball) continue;
-
+        // Special rendering for snake boss
+        if (IsSnakeBoss(game->entities[i])) {
+            SnakeBossRender(game->entities[i]);
+            continue; // Skip the default EntityRender
+        }
         EntityRender(game->entities[i]);
     }
 
@@ -350,6 +401,8 @@ void GameRender(Game* game) {
             DrawText(TextFormat("Player Pos: %.1f, %.1f", playerPos.x, playerPos.y), 10, 70, 20, WHITE);
         }
     }
+
+
 
     // End drawing
     RendererEndFrame(game->renderer);
@@ -665,3 +718,63 @@ bool GameLoadLevel(Game* game, int levelId) {
 
     return true;
 }
+
+/**
+* Add these function implementations to game.c
+*/
+
+/**
+* @brief Set snake boss for game
+*
+* Creates a new snake boss entity or replaces the existing one.
+*
+* @param game Pointer to game
+* @param gridX Initial X position in grid coordinates
+* @param gridY Initial Y position in grid coordinates
+* @param initialLength Initial number of segments
+* @return Entity* Pointer to snake boss entity
+*/
+Entity* GameSetSnakeBoss(Game* game, int gridX, int gridY, int initialLength) {
+    if (!game) return NULL;
+
+    // Create new snake boss
+    Entity* snakeBoss = SnakeBossCreate(gridX, gridY, initialLength);
+    if (!snakeBoss) {
+        TraceLog(LOG_ERROR, "Failed to create snake boss");
+        return NULL;
+    }
+
+    // Add snake boss to entities
+    if (!GameAddEntity(game, snakeBoss)) {
+        TraceLog(LOG_ERROR, "Failed to add snake boss to entities");
+        EntityDestroy(snakeBoss);
+        return NULL;
+    }
+
+    TraceLog(LOG_INFO, "Snake boss added to game at grid position (%d, %d)", gridX, gridY);
+    return snakeBoss;
+}
+
+/**
+* @brief Initialize world layout with snake boss
+*
+* Helper function to set up a world layout with a snake boss enemy.
+*
+* @param world Pointer to world
+* @param camera Pointer to camera
+*/
+void InitializeWorldLayoutWithSnakeBoss(World* world, GameCamera* camera) {
+    // First, initialize the regular world layout
+    InitializeWorldLayout(world, camera);
+
+    // Now, we'll add a snake boss to the game
+    // This would be called from GameInitialize or similar
+
+    // For now, just log that this function was called
+    TraceLog(LOG_INFO, "Snake boss world layout initialized");
+}
+
+
+
+
+
