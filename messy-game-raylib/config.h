@@ -45,7 +45,7 @@
 #define PLAYER_LERP_ALPHA 1.2f
 
 // Ball physics configuration
-#define BALL_RADIUS 4.0f
+#define BALL_RADIUS 5.0f
 #define BALL_INITIAL_SPEED 2.0f
 #define BALL_MAX_SPEED 8.0f
 #define BALL_BOUNCE_FACTOR 0.8f
