@@ -339,7 +339,7 @@ void SnakeBossUpdate(Entity* snakeBoss, World* world, Entity* ball, Entity* play
     }
 
     // Check for collisions
-    SnakeBossHandleBallCollision(snakeBoss, ball);
+    SnakeBossHandleBallCollision(snakeBoss, ball, player);
     SnakeBossHandlePlayerCollision(snakeBoss, player);
 }
 
@@ -578,10 +578,11 @@ bool SnakeBossIsValidPosition(Entity* snakeBoss, int gridX, int gridY, World* wo
 *
 * @param snakeBoss Pointer to snake boss entity
 * @param ball Pointer to ball entity
+* @param player Pointer to player entity (for XP awards)
 * @return true If collision occurred
 * @return false If no collision
 */
-bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball) {
+bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball, Entity* player) {
     if (!snakeBoss || !ball || snakeBoss->type != ENTITY_ENEMY || ball->type != ENTITY_BALL) return false;
 
     SnakeBossData* bossData = SnakeBossGetData(snakeBoss);
@@ -612,6 +613,12 @@ bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball) {
 
                 // Bounce ball
                 BallApplyForce(ball, (ball->x - headX) * 0.5f, (ball->y - headY) * 0.5f);
+
+                // Award XP to player if player reference is valid
+                if (player && player->type == ENTITY_PLAYER) {
+                    PlayerAwardXP(player, PLAYER_XP_PER_HIT);
+                    TraceLog(LOG_INFO, "Player awarded XP for hitting snake boss");
+                }
 
                 TraceLog(LOG_INFO, "BLUE ball damaged snake! Segments left: %d", bossData->segmentCount);
             }
@@ -671,6 +678,12 @@ bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball) {
 
                     // Bounce ball
                     BallApplyForce(ball, (ball->x - segX) * 0.5f, (ball->y - segY) * 0.5f);
+
+                    // Award XP to player if player reference is valid
+                    if (player && player->type == ENTITY_PLAYER) {
+                        PlayerAwardXP(player, PLAYER_XP_PER_HIT);
+                        TraceLog(LOG_INFO, "Player awarded XP for hitting snake body");
+                    }
 
                     TraceLog(LOG_INFO, "BLUE ball hit snake body! Segments left: %d", bossData->segmentCount);
                 }

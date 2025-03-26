@@ -12,6 +12,16 @@
 #include "entity.h"
 #include "world.h"
 
+#define PLAYER_BASE_KICK_FORCE 5.0f       // Base kick force
+#define PLAYER_BASE_MOVE_SPEED 1.0f       // Base movement multiplier
+#define PLAYER_KICK_FORCE_PER_LEVEL 0.2f  // 20% kick force increase per level
+#define PLAYER_MOVE_SPEED_PER_LEVEL 0.1f  // 10% speed increase per level
+#define PLAYER_XP_PER_HIT 110.0f           // XP gained per successful enemy hit
+#define PLAYER_BASE_MAX_XP 100.0f         // XP needed for first level up
+#define PLAYER_XP_SCALE_FACTOR 3.0f       // Each level requires 50% more XP
+
+
+
  /**
   * @brief Player animation states
   *
@@ -56,8 +66,10 @@ typedef struct {
     int level;                 // Player level
     float maxHealth;           // Maximum health
     float currentHealth;       // Current health
-    float maxMana;             // Maximum mana/energy
-    float currentMana;         // Current mana/energy
+    float currentXP;           // Current XP
+    float maxXP;               // XP needed for next level
+    float kickForce;           // Force applied when kicking the ball
+    float moveSpeed;           // Movement speed multiplier
     bool hasSpecialAbility;    // Whether player has special ability
     // Add more player-specific attributes as needed
 } PlayerData;
@@ -80,6 +92,16 @@ Entity* PlayerCreate(PlayerType type, float x, float y);
  * @param deltaTime Time elapsed since last update
  */
 void PlayerUpdate(Entity* player, World* world, float deltaTime);
+
+/**
+* @brief Award XP to player and handle level up
+*
+* @param player Pointer to player entity
+* @param xpAmount Amount of XP to award
+* @return true If player leveled up
+* @return false If no level up occurred
+*/
+bool PlayerAwardXP(Entity* player, float xpAmount);
 
 /**
  * @brief Render player with appropriate animation

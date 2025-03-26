@@ -282,7 +282,8 @@ void BallHandlePlayerCollision(Entity* ball, Entity* player) {
         ball->y = player->y + ny * (ballData->radius + playerRadius);
 
         // Apply force to ball based on player's movement and collision direction
-        float pushForce = PLAYER_PUSH_FORCE;
+        PlayerData* playerData = PlayerGetData(player);
+        float pushForce = playerData ? playerData->kickForce : PLAYER_PUSH_FORCE;
         ball->speedX = nx * pushForce + player->speedX * 0.5f;
         ball->speedY = ny * pushForce + player->speedY * 0.5f;
 

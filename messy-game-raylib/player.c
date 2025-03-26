@@ -43,8 +43,10 @@ Entity* PlayerCreate(PlayerType type, float x, float y) {
     playerData->level = 1;
     playerData->maxHealth = 100.0f;
     playerData->currentHealth = 100.0f;
-    playerData->maxMana = 100.0f;
-    playerData->currentMana = 100.0f;
+   playerData->currentXP = 0.0f;
+    playerData->maxXP = PLAYER_BASE_MAX_XP;
+    playerData->kickForce = PLAYER_BASE_KICK_FORCE;
+    playerData->moveSpeed = PLAYER_BASE_MOVE_SPEED;
     playerData->hasSpecialAbility = false;
 
     // Set type-specific data
@@ -75,22 +77,25 @@ void PlayerUpdate(Entity* player, World* world, float deltaTime) {
 }
 
 /**
- * @brief Handle player movement based on input
- *
- * @param player Pointer to player entity
- * @param world Pointer to game world
- * @param deltaTime Time elapsed since last update
- */
+* @brief Handle player movement based on input
+*
+* @param player Pointer to player entity
+* @param world Pointer to game world
+* @param deltaTime Time elapsed since last update
+*/
 void PlayerHandleMovement(Entity* player, World* world, float deltaTime) {
     if (!player || !world || player->type != ENTITY_PLAYER) return;
 
-    // Get input manager (normally this would be passed as a parameter)
-    // For this example, we'll assume it's accessible globally or through a game state
-    InputManager* input = GetInputManager(); // This function would need to be implemented
+    // Get input manager
+    InputManager* input = GetInputManager();
     if (input == NULL) {
         // Skip movement if no input manager available
         return;
     }
+
+    // Get player data to access player's level-based stats
+    PlayerData* playerData = PlayerGetData(player);
+    if (!playerData) return;
 
     // Store previous position for collision resolution
     float prevX = player->x;
@@ -99,9 +104,9 @@ void PlayerHandleMovement(Entity* player, World* world, float deltaTime) {
     // Handle movement input using the input manager
     Vector2 moveDir = InputManagerGetMovementVector(input);
 
-    // Apply acceleration based on input direction
-    player->speedX += moveDir.x * PLAYER_ACCEL * deltaTime;
-    player->speedY += moveDir.y * PLAYER_ACCEL * deltaTime;
+    // Apply acceleration based on input direction and player's move speed
+    player->speedX += moveDir.x * PLAYER_ACCEL * deltaTime * playerData->moveSpeed;
+    player->speedY += moveDir.y * PLAYER_ACCEL * deltaTime * playerData->moveSpeed;
 
     // Apply deceleration if no input in that direction
     if (moveDir.x == 0) {
@@ -114,7 +119,6 @@ void PlayerHandleMovement(Entity* player, World* world, float deltaTime) {
             if (player->speedX > 0) player->speedX = 0;
         }
     }
-
     if (moveDir.y == 0) {
         if (player->speedY > 0) {
             player->speedY -= PLAYER_DECEL * deltaTime;
@@ -126,11 +130,12 @@ void PlayerHandleMovement(Entity* player, World* world, float deltaTime) {
         }
     }
 
-    // Apply speed limits
-    if (player->speedX > PLAYER_MAX_SPEED) player->speedX = PLAYER_MAX_SPEED;
-    if (player->speedX < -PLAYER_MAX_SPEED) player->speedX = -PLAYER_MAX_SPEED;
-    if (player->speedY > PLAYER_MAX_SPEED) player->speedY = PLAYER_MAX_SPEED;
-    if (player->speedY < -PLAYER_MAX_SPEED) player->speedY = -PLAYER_MAX_SPEED;
+    // Apply speed limits adjusted for player's level-based move speed
+    float maxSpeed = PLAYER_MAX_SPEED * playerData->moveSpeed;
+    if (player->speedX > maxSpeed) player->speedX = maxSpeed;
+    if (player->speedX < -maxSpeed) player->speedX = -maxSpeed;
+    if (player->speedY > maxSpeed) player->speedY = maxSpeed;
+    if (player->speedY < -maxSpeed) player->speedY = -maxSpeed;
 
     // Update position based on speed
     // Try horizontal movement first
@@ -163,6 +168,30 @@ void PlayerHandleMovement(Entity* player, World* world, float deltaTime) {
         // Vertical movement dominates
         if (player->speedY > 0) player->facing = DIRECTION_DOWN;
         else if (player->speedY < 0) player->facing = DIRECTION_UP;
+    }
+
+    // Enforce boundaries to prevent going off-screen
+    float worldWidthPixels = world->width * TILE_WIDTH;
+    float worldHeightPixels = world->height * TILE_HEIGHT;
+
+    // Add a small buffer from the edges
+    float buffer = 2.0f;
+    if (player->x < buffer) {
+        player->x = buffer;
+        player->speedX = 0;
+    }
+    else if (player->x > worldWidthPixels - buffer) {
+        player->x = worldWidthPixels - buffer;
+        player->speedX = 0;
+    }
+
+    if (player->y < buffer) {
+        player->y = buffer;
+        player->speedY = 0;
+    }
+    else if (player->y > worldHeightPixels - buffer) {
+        player->y = worldHeightPixels - buffer;
+        player->speedY = 0;
     }
 }
 
@@ -224,6 +253,54 @@ void PlayerUpdateAnimation(Entity* player, float deltaTime) {
         // Advance to next frame
         playerData->currentFrame = (playerData->currentFrame + 1) % 8; // 8 frames per animation
     }
+}
+
+/**
+* @brief Award XP to player and handle level up
+*
+* @param player Pointer to player entity
+* @param xpAmount Amount of XP to award
+* @return true If player leveled up
+* @return false If no level up occurred
+*/
+bool PlayerAwardXP(Entity * player, float xpAmount) {
+    if (!player || player->type != ENTITY_PLAYER) return false;
+
+    PlayerData* playerData = PlayerGetData(player);
+    if (!playerData) return false;
+
+    // Add XP
+    playerData->currentXP += xpAmount;
+
+    // Check for level up
+    if (playerData->currentXP >= playerData->maxXP) {
+        // Level up!
+        playerData->level++;
+
+        // Calculate remaining XP (overflow)
+        float remainingXP = playerData->currentXP - playerData->maxXP;
+
+        // Increase max XP for next level
+        playerData->maxXP *= PLAYER_XP_SCALE_FACTOR;
+
+        // Reset current XP with any overflow
+        playerData->currentXP = remainingXP;
+
+        // Increase player stats
+        playerData->kickForce += PLAYER_BASE_KICK_FORCE * PLAYER_KICK_FORCE_PER_LEVEL;
+        playerData->moveSpeed += PLAYER_BASE_MOVE_SPEED * PLAYER_MOVE_SPEED_PER_LEVEL;
+
+        // Optional: Heal player on level up
+        playerData->maxHealth += 10.0f;
+        playerData->currentHealth = playerData->maxHealth;
+
+        TraceLog(LOG_INFO, "Player leveled up to %d! New kick force: %.2f, New speed: %.2f",
+            playerData->level, playerData->kickForce, playerData->moveSpeed);
+
+        return true;
+    }
+
+    return false;
 }
 
 /**

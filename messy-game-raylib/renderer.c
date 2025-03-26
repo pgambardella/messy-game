@@ -85,16 +85,16 @@ void RendererDrawHUD(Renderer* renderer, Entity* player) {
             15, 72, 16, WHITE
         );
 
-        // Draw mana bar background
+        // Draw XP bar background (replacing mana bar)
         DrawRectangle(10, 100, 200, 20, GRAY);
 
-        // Draw mana bar fill (based on current/max mana)
-        float manaPercent = playerData->currentMana / playerData->maxMana;
-        DrawRectangle(10, 100, (int)(200 * manaPercent), 20, BLUE);
+        // Draw XP bar fill
+        float xpPercent = playerData->currentXP / playerData->maxXP;
+        DrawRectangle(10, 100, (int)(200 * xpPercent), 20, GOLD);
 
-        // Draw mana text
+        // Draw XP text
         DrawText(
-            TextFormat("Mana: %.0f/%.0f", playerData->currentMana, playerData->maxMana),
+            TextFormat("XP: %.0f/%.0f", playerData->currentXP, playerData->maxXP),
             15, 102, 16, WHITE
         );
 

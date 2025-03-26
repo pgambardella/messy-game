@@ -97,10 +97,11 @@ void SnakeBossRender(Entity* snakeBoss);
 *
 * @param snakeBoss Pointer to snake boss entity
 * @param ball Pointer to ball entity
+* @param player Pointer to player entity (for XP awards)
 * @return true If collision occurred
 * @return false If no collision
 */
-bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball);
+bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball, Entity* player);
 
 /**
 * @brief Handle snake boss collision with the player

@@ -389,7 +389,7 @@ void GameRender(Game* game) {
         RendererDrawHUD(game->renderer, game->player);
     }
 
-    // Draw debug info if in debug mode
+    /*/ Draw debug info if in debug mode
     if (game->renderer->debugMode) {
         DrawText(TextFormat("FPS: %d", game->fps), 10, 10, 20, WHITE);
         DrawText(TextFormat("Entities: %d", game->entityCount), 10, 40, 20, WHITE);
@@ -398,7 +398,7 @@ void GameRender(Game* game) {
             Vector2 playerPos = { game->player->x, game->player->y };
             DrawText(TextFormat("Player Pos: %.1f, %.1f", playerPos.x, playerPos.y), 10, 70, 20, WHITE);
         }
-    }
+    }//*/
 
 
 

@@ -288,7 +288,7 @@ void RoomRender(Room* room, Camera2D* camera) {
     DrawText(
         TextFormat("Room %d", room->id),
         (int)(roomX + (room->width * TILE_WIDTH) / 2 - 30),
-        (int)(roomY + (room->height * TILE_HEIGHT) / 2),
+        (int)(roomY + (room->height * TILE_HEIGHT) /*/ 2*/-30),
         20,
         BLACK
     );
