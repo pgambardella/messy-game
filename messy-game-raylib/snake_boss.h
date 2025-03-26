@@ -150,6 +150,16 @@ void SnakeBossFindPath(Entity* snakeBoss, int targetGridX, int targetGridY, Worl
 bool SnakeBossMove(Entity* snakeBoss, World* world);
 
 /**
+* @brief Move the snake boss one step in its current direction
+*
+* @param snakeBoss Pointer to snake boss entity
+* @param world Pointer to game world
+* @return true If move was successful
+* @return false If move failed (e.g., wall collision)
+*/
+bool SnakeBossIsValidMultiTilePosition(Entity* snakeBoss, int gridX, int gridY, World* world);
+
+/**
 * @brief Update all segment positions
 *
 * @param snakeBoss Pointer to snake boss entity

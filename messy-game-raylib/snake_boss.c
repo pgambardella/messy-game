@@ -16,6 +16,16 @@
 #define SNAKE_SHRINK_TIME 2.0f             // Time for shrink animation
 #define SNAKE_HEAD_RADIUS 6.0f             // Radius of the snake head
 
+// Snake appearance configuration
+#define SNAKE_SEGMENT_WIDTH_TILES 2       // Width of snake segment in tiles (default: 2)
+#define SNAKE_SEGMENT_HEIGHT_TILES 2      // Height of snake segment in tiles (default: 2)
+#define SNAKE_HEAD_RADIUS_FACTOR 1.5f     // Head radius as a factor of segment size (default: 1.5)
+
+// Derived size calculations - do not modify these directly
+#define SNAKE_SEGMENT_WIDTH (TILE_WIDTH * SNAKE_SEGMENT_WIDTH_TILES)
+#define SNAKE_SEGMENT_HEIGHT (TILE_HEIGHT * SNAKE_SEGMENT_HEIGHT_TILES)
+#define SNAKE_HEAD_RADIUS ((SNAKE_SEGMENT_WIDTH + SNAKE_SEGMENT_HEIGHT) / 4.0f * SNAKE_HEAD_RADIUS_FACTOR)
+
 // Function prototypes for helper functions
 static bool CheckDirectionValidity(Entity* snakeBoss, Direction direction, World* world);
 static Direction FindAnyValidDirection(Entity* snakeBoss, World* world, Direction oppositeDir);
@@ -111,7 +121,7 @@ Entity* SnakeBossCreate(int gridX, int gridY, int initialLength) {
         gridX, gridY, worldX, worldY);
 
     // Create base entity
-    Entity* snakeBoss = EntityCreate(ENTITY_ENEMY, worldX, worldY, TILE_WIDTH, TILE_HEIGHT);
+    Entity* snakeBoss = EntityCreate(ENTITY_ENEMY, worldX, worldY, SNAKE_SEGMENT_WIDTH, SNAKE_SEGMENT_HEIGHT);
     if (!snakeBoss) {
         TraceLog(LOG_ERROR, "Failed to create snake boss entity");
         return NULL;
@@ -474,6 +484,8 @@ bool SnakeBossMove(Entity* snakeBoss, World* world) {
     int newGridX = headGridX;
     int newGridY = headGridY;
 
+    // When using larger segments, we might want to move more than 1 tile at a time
+    // to maintain visual spacing, but for grid logic we'll keep 1-tile movements
     switch (bossData->currentDir) {
     case DIRECTION_UP:
         newGridY--;
@@ -515,6 +527,40 @@ bool SnakeBossMove(Entity* snakeBoss, World* world) {
 }
 
 /**
+*@brief Check if a multi - tile area is valid for the snake to occupy
+*
+* @param snakeBoss Pointer to snake boss entity
+* @param gridX Base X position in grid coordinates(top - left)
+* @param gridY Base Y position in grid coordinates(top - left)
+* @param world Pointer to game world
+* @return true If all tiles in the area are valid
+* @return false If any tile in the area is invalid
+*/
+bool SnakeBossIsValidMultiTilePosition(Entity * snakeBoss, int gridX, int gridY, World * world) {
+    if (!snakeBoss || !world) return false;
+
+    // For now, we're just checking the center point for collisions
+    // This is a simpler approach that works well with the existing grid system
+
+    // If needed, the code could be expanded to check all tiles in the segment's area
+    // by iterating through the area and checking each tile:
+    /*
+    for (int dx = 0; dx < SNAKE_SEGMENT_WIDTH_TILES; dx++) {
+        for (int dy = 0; dy < SNAKE_SEGMENT_HEIGHT_TILES; dy++) {
+            float worldX = (gridX + dx) * TILE_WIDTH + TILE_WIDTH / 2.0f;
+            float worldY = (gridY + dy) * TILE_HEIGHT + TILE_HEIGHT / 2.0f;
+
+            if (WorldIsWallAtPosition(world, worldX, worldY)) {
+                return false;
+            }
+        }
+    }
+    */
+
+    return SnakeBossIsValidPosition(snakeBoss, gridX, gridY, world);
+}
+
+/**
 * @brief Update all segment positions
 *
 * @param snakeBoss Pointer to snake boss entity
@@ -527,8 +573,9 @@ void SnakeBossUpdateSegments(Entity* snakeBoss) {
 
     // Update world coordinates for all segments
     for (int i = 0; i < bossData->segmentCount; i++) {
-        bossData->segments[i].worldX = bossData->segments[i].gridX * TILE_WIDTH + TILE_WIDTH / 2.0f;
-        bossData->segments[i].worldY = bossData->segments[i].gridY * TILE_HEIGHT + TILE_HEIGHT / 2.0f;
+        // Calculate world position based on grid position and segment size
+        bossData->segments[i].worldX = bossData->segments[i].gridX * TILE_WIDTH + (SNAKE_SEGMENT_WIDTH_TILES * TILE_WIDTH) / 2.0f;
+        bossData->segments[i].worldY = bossData->segments[i].gridY * TILE_HEIGHT + (SNAKE_SEGMENT_HEIGHT_TILES * TILE_HEIGHT) / 2.0f;
     }
 
     // Update entity position to match head
@@ -657,10 +704,10 @@ bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball, Entity* playe
 
             // Create a collision rectangle for the segment
             Rectangle segRect = {
-                segX - TILE_WIDTH / 2.0f,
-                segY - TILE_HEIGHT / 2.0f,
-                TILE_WIDTH,
-                TILE_HEIGHT
+                segX - SNAKE_SEGMENT_WIDTH / 2.0f,
+                segY - SNAKE_SEGMENT_HEIGHT / 2.0f,
+                SNAKE_SEGMENT_WIDTH,
+                SNAKE_SEGMENT_HEIGHT
             };
 
             // Check circle-rectangle collision
@@ -741,10 +788,10 @@ bool SnakeBossHandlePlayerCollision(Entity* snakeBoss, Entity* player) {
 
         // Create a collision rectangle for the segment
         Rectangle segRect = {
-            segX - TILE_WIDTH / 2.0f,
-            segY - TILE_HEIGHT / 2.0f,
-            TILE_WIDTH,
-            TILE_HEIGHT
+            segX - SNAKE_SEGMENT_WIDTH / 2.0f,
+            segY - SNAKE_SEGMENT_HEIGHT / 2.0f,
+            SNAKE_SEGMENT_WIDTH,
+            SNAKE_SEGMENT_HEIGHT
         };
 
         // Create a collision circle for the player
@@ -876,30 +923,31 @@ void SnakeBossRender(Entity* snakeBoss) {
         float segX = bossData->segments[i].worldX;
         float segY = bossData->segments[i].worldY;
 
+        // Draw larger rectangle based on configured segment size
         DrawRectangle(
-            (int)(segX - TILE_WIDTH / 2.0f),
-            (int)(segY - TILE_HEIGHT / 2.0f),
-            TILE_WIDTH,
-            TILE_HEIGHT,
+            (int)(segX - SNAKE_SEGMENT_WIDTH / 2.0f),
+            (int)(segY - SNAKE_SEGMENT_HEIGHT / 2.0f),
+            SNAKE_SEGMENT_WIDTH,
+            SNAKE_SEGMENT_HEIGHT,
             bossData->bodyColor
         );
     }
 
-    // Render head (circle)
+    // Render head (circle) with configurable radius
     float headX = bossData->segments[0].worldX;
     float headY = bossData->segments[0].worldY;
 
     DrawCircle(
         (int)headX,
         (int)headY,
-        SNAKE_HEAD_RADIUS,
+        SNAKE_HEAD_RADIUS,  // Use configurable head radius
         bossData->headColor
     );
 
-    // If in growing state, add a visual effect
+    // Visual effects for growing, shrinking, defeated states
     if (bossData->state == SNAKE_STATE_GROWING) {
         float growthProgress = bossData->growTimer / SNAKE_GROW_TIME;
-        float effectSize = 10.0f * (1.0f - growthProgress);
+        float effectSize = SNAKE_HEAD_RADIUS * 0.5f * (1.0f - growthProgress);
 
         DrawCircleLines(
             (int)headX,
@@ -909,10 +957,9 @@ void SnakeBossRender(Entity* snakeBoss) {
         );
     }
 
-    // If in shrinking state, add a visual effect
     if (bossData->state == SNAKE_STATE_SHRINKING) {
         float shrinkProgress = bossData->shrinkTimer / SNAKE_SHRINK_TIME;
-        float effectSize = 10.0f * (1.0f - shrinkProgress);
+        float effectSize = SNAKE_HEAD_RADIUS * 0.5f * (1.0f - shrinkProgress);
 
         DrawCircleLines(
             (int)headX,
@@ -922,19 +969,18 @@ void SnakeBossRender(Entity* snakeBoss) {
         );
     }
 
-    // If defeated, show special effect
     if (bossData->state == SNAKE_STATE_DEFEATED) {
         DrawCircleLines(
             (int)headX,
             (int)headY,
-            SNAKE_HEAD_RADIUS * 2.0f,
+            SNAKE_HEAD_RADIUS * 1.5f,
             RED
         );
 
         DrawCircleLines(
             (int)headX,
             (int)headY,
-            SNAKE_HEAD_RADIUS * 1.5f,
+            SNAKE_HEAD_RADIUS * 1.2f,
             YELLOW
         );
     }

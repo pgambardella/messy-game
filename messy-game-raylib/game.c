@@ -800,11 +800,38 @@ void InitializeWorldLayoutWithSnakeBoss(World* world, GameCamera* camera) {
     // First, initialize the regular world layout
     InitializeWorldLayout(world, camera);
 
-    // Now, we'll add a snake boss to the game
-    // This would be called from GameInitialize or similar
+    // Now, we'll create a more spacious area for the larger snake
+    // Calculate a good position in the world grid
+    int gridCenterX = world->width / 2;
+    int gridCenterY = world->height / 2;
 
-    // For now, just log that this function was called
-    TraceLog(LOG_INFO, "Snake boss world layout initialized");
+    // Create a clear area for the snake to move in
+    int clearAreaLeft = gridCenterX + 10;  // Place on the right side of center
+    int clearAreaTop = gridCenterY - 5;
+    int clearAreaWidth = 15;
+    int clearAreaHeight = 10;
+
+    // Clear any walls in this area
+    for (int x = clearAreaLeft; x < clearAreaLeft + clearAreaWidth; x++) {
+        for (int y = clearAreaTop; y < clearAreaTop + clearAreaHeight; y++) {
+            if (x >= 0 && x < world->width && y >= 0 && y < world->height) {
+                WorldSetTileType(world, x, y, TILE_TYPE_EMPTY);
+            }
+        }
+    }
+
+    // Add walls around the perimeter of the clear area
+    for (int x = clearAreaLeft; x < clearAreaLeft + clearAreaWidth; x++) {
+        WorldSetTileType(world, x, clearAreaTop, TILE_TYPE_WALL);
+        WorldSetTileType(world, x, clearAreaTop + clearAreaHeight - 1, TILE_TYPE_WALL);
+    }
+
+    for (int y = clearAreaTop; y < clearAreaTop + clearAreaHeight; y++) {
+        WorldSetTileType(world, clearAreaLeft, y, TILE_TYPE_WALL);
+        WorldSetTileType(world, clearAreaLeft + clearAreaWidth - 1, y, TILE_TYPE_WALL);
+    }
+
+    TraceLog(LOG_INFO, "Created custom arena for snake boss");
 }
 
 
