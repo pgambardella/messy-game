@@ -9,14 +9,14 @@
 #include "player.h"
 
 // Constants specific to the snake boss
-#define SNAKE_INITIAL_MOVE_INTERVAL 1.0f   // Initial time between moves in seconds
-#define SNAKE_MIN_MOVE_INTERVAL 0.3f       // Minimum time between moves (fastest speed)
+#define SNAKE_INITIAL_MOVE_INTERVAL 0.2f   // Initial time between moves in seconds
+#define SNAKE_MIN_MOVE_INTERVAL 0.05f       // Minimum time between moves (fastest speed)
 #define SNAKE_INTERVAL_DECREASE 0.05f      // How much to decrease interval per segment
-#define SNAKE_GROW_TIME 0.5f               // Time for growth animation
-#define SNAKE_SHRINK_TIME 0.5f             // Time for shrink animation
-#define SNAKE_HEAD_RADIUS 5.0f             // Radius of the snake head
+#define SNAKE_GROW_TIME 2.0f               // Time for growth animation
+#define SNAKE_SHRINK_TIME 2.0f             // Time for shrink animation
+#define SNAKE_HEAD_RADIUS 6.0f             // Radius of the snake head
 
-// Forward declarations for internal helper functions
+// Function prototypes for helper functions
 static bool CheckDirectionValidity(Entity* snakeBoss, Direction direction, World* world);
 static Direction FindAnyValidDirection(Entity* snakeBoss, World* world, Direction oppositeDir);
 
@@ -195,14 +195,16 @@ void SnakeBossUpdate(Entity* snakeBoss, World* world, Entity* ball, Entity* play
     // Handle state-specific updates
     switch (bossData->state) {
     case SNAKE_STATE_IDLE:
+    {
         // Transition to tracking state
         bossData->state = SNAKE_STATE_TRACKING;
         bossData->hasTarget = false;  // Force target recalculation
-        break;
+    }
+    break;
 
     case SNAKE_STATE_TRACKING:
+    {
         // Always update the target position to follow the ball more aggressively
-        // Convert ball position to grid coordinates
         int ballGridX = (int)(ball->x / TILE_WIDTH);
         int ballGridY = (int)(ball->y / TILE_HEIGHT);
 
@@ -216,15 +218,20 @@ void SnakeBossUpdate(Entity* snakeBoss, World* world, Entity* ball, Entity* play
 
         // Transition to moving state
         bossData->state = SNAKE_STATE_MOVING;
-        break;
+    }
+    break;
 
     case SNAKE_STATE_MOVING:
+    {
         // Update move timer
         bossData->moveTimer += deltaTime;
 
         // Move when timer exceeds interval
         if (bossData->moveTimer >= bossData->moveInterval) {
-            static int moveCount = 0;  // Moved declaration to beginning of block
+            static int moveCount = 0;
+            int headGridX, headGridY;
+            int newBallGridX, newBallGridY;
+            bool moved;
 
             bossData->moveTimer = 0.0f;
 
@@ -232,11 +239,11 @@ void SnakeBossUpdate(Entity* snakeBoss, World* world, Entity* ball, Entity* play
             bossData->currentDir = bossData->nextDir;
 
             // Move snake
-            bool moved = SnakeBossMove(snakeBoss, world);
+            moved = SnakeBossMove(snakeBoss, world);
 
             // Check if we've reached the target
-            int headGridX = bossData->segments[0].gridX;
-            int headGridY = bossData->segments[0].gridY;
+            headGridX = bossData->segments[0].gridX;
+            headGridY = bossData->segments[0].gridY;
 
             if (headGridX == bossData->targetGridX && headGridY == bossData->targetGridY) {
                 // Target reached, go back to tracking for a new target
@@ -252,10 +259,11 @@ void SnakeBossUpdate(Entity* snakeBoss, World* world, Entity* ball, Entity* play
             // Recalculate path every few moves to better track the ball
             moveCount++;
             if (moveCount >= 3) {  // Recalculate every 3 moves
-                int newBallGridX = (int)(ball->x / TILE_WIDTH);
-                int newBallGridY = (int)(ball->y / TILE_HEIGHT);
-
                 moveCount = 0;
+
+                // Get fresh ball position
+                newBallGridX = (int)(ball->x / TILE_WIDTH);
+                newBallGridY = (int)(ball->y / TILE_HEIGHT);
 
                 // If ball has moved, update target
                 if (newBallGridX != bossData->targetGridX || newBallGridY != bossData->targetGridY) {
@@ -265,9 +273,11 @@ void SnakeBossUpdate(Entity* snakeBoss, World* world, Entity* ball, Entity* play
                 }
             }
         }
-        break;
+    }
+    break;
 
     case SNAKE_STATE_GROWING:
+    {
         // Handle growth animation
         bossData->growTimer += deltaTime;
         if (bossData->growTimer >= SNAKE_GROW_TIME) {
@@ -275,9 +285,11 @@ void SnakeBossUpdate(Entity* snakeBoss, World* world, Entity* ball, Entity* play
             bossData->state = SNAKE_STATE_TRACKING;
             bossData->hasTarget = false;  // Force target recalculation
         }
-        break;
+    }
+    break;
 
     case SNAKE_STATE_SHRINKING:
+    {
         // Handle shrinking animation
         bossData->shrinkTimer += deltaTime;
         if (bossData->shrinkTimer >= SNAKE_SHRINK_TIME) {
@@ -285,7 +297,8 @@ void SnakeBossUpdate(Entity* snakeBoss, World* world, Entity* ball, Entity* play
             bossData->state = SNAKE_STATE_TRACKING;
             bossData->hasTarget = false;  // Force target recalculation
         }
-        break;
+    }
+    break;
 
     case SNAKE_STATE_DEFEATED:
         // Nothing to do in defeated state
@@ -380,9 +393,6 @@ void SnakeBossFindPath(Entity* snakeBoss, int targetGridX, int targetGridY, Worl
     bossData->nextDir = anyDir;
     TraceLog(LOG_DEBUG, "Snake chose any valid direction: %d", anyDir);
 }
-
-// These functions are now defined at the top of the file as static functions
-// The code has been removed from here to prevent redefinition errors
 
 /**
 * @brief Move the snake boss one step in its current direction
