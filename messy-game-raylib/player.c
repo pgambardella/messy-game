@@ -222,12 +222,7 @@ void PlayerUpdateAnimation(Entity* player, float deltaTime) {
         playerData->frameCounter = 0;
 
         // Advance to next frame
-        playerData->currentFrame++;
-
-        // Loop animation (assume 3 frames per animation)
-        if (playerData->currentFrame > 2) {
-            playerData->currentFrame = 0;
-        }
+        playerData->currentFrame = (playerData->currentFrame + 1) % 8; // 8 frames per animation
     }
 }
 
@@ -242,64 +237,79 @@ void PlayerRender(Entity* player) {
     PlayerData* playerData = (PlayerData*)player->typeData;
     if (!playerData) return;
 
-    // Get texture manager (normally this would be passed as a parameter)
-    // For this example, we'll assume it's accessible globally or through a game state
-    TextureManager* textures = GetTextureManager(); // This function would need to be implemented
+    // Get texture manager and renderer
+    TextureManager* textures = GetTextureManager();
+    Renderer* renderer = GetRenderer();
+    if (!textures || !renderer) return;
 
     // Calculate source rectangle based on animation state
-    int sourceX = 0;
+    // Account for 1-pixel gaps and top empty row
+
+    // Real sprite dimensions (without gaps)
+    const int actualSpriteWidth = 16;
+    const int actualSpriteHeight = 16;
+
+    // Starting pixel for different animations (accounting for 1px offset at top and gaps)
     int sourceY = 0;
 
     switch (playerData->currentAnim) {
     case ANIM_IDLE_DOWN:
-        sourceX = 0;
-        sourceY = 0;
-        break;
     case ANIM_WALK_DOWN:
-        sourceX = playerData->currentFrame;
-        sourceY = 0;
-        break;
-    case ANIM_IDLE_UP:
-        sourceX = 0;
-        sourceY = 1;
-        break;
-    case ANIM_WALK_UP:
-        sourceX = playerData->currentFrame;
-        sourceY = 1;
-        break;
-    case ANIM_IDLE_LEFT:
-        sourceX = 0;
-        sourceY = 2;
-        break;
-    case ANIM_WALK_LEFT:
-        sourceX = playerData->currentFrame;
-        sourceY = 2;
+        sourceY = 1; // Starting after the 1px empty row
         break;
     case ANIM_IDLE_RIGHT:
-        sourceX = 0;
-        sourceY = 3;
-        break;
     case ANIM_WALK_RIGHT:
-        sourceX = playerData->currentFrame;
-        sourceY = 3;
+        sourceY = 1 + actualSpriteHeight + 1; // Row 2 (after 1px gap)
+        break;
+    case ANIM_IDLE_UP:
+    case ANIM_WALK_UP:
+        sourceY = 1 + (actualSpriteHeight + 1) * 2; // Row 3
+        break;
+    case ANIM_IDLE_LEFT:
+    case ANIM_WALK_LEFT:
+        sourceY = 1 + (actualSpriteHeight + 1) * 3; // Row 4
         break;
     }
 
-    // Get the renderer (normally this would be passed as a parameter)
-    Renderer* renderer = GetRenderer(); // This function would need to be implemented
+    // For idle animations, use frame 0; otherwise use the current animation frame
+    int frameToUse = 0;
+    if (playerData->currentAnim == ANIM_WALK_DOWN ||
+        playerData->currentAnim == ANIM_WALK_UP ||
+        playerData->currentAnim == ANIM_WALK_LEFT ||
+        playerData->currentAnim == ANIM_WALK_RIGHT) {
+        frameToUse = playerData->currentFrame;
+    }
 
-    // Draw the player sprite
-    RendererDrawPlayerSprite(
-        renderer,
-        TEXTURE_PLAYER,
-        sourceX,
-        sourceY,
-        player->x - player->width / 2,
-        player->y - player->height / 2,
+    // Calculate source X (with 1px gaps)
+    int sourceX = frameToUse * (actualSpriteWidth /* + 1 */ );
+
+    // Create source rectangle
+    Rectangle source = {
+        (float)sourceX,
+        (float)sourceY,
+        (float)actualSpriteWidth,
+        (float)actualSpriteHeight
+    };
+
+    // Create destination rectangle
+    Rectangle dest = {
+        player->x - actualSpriteWidth / 2,
+        player->y - actualSpriteHeight / 2,
+        (float)actualSpriteWidth,
+        (float)actualSpriteHeight
+    };
+
+    // Draw sprite
+    DrawTexturePro(
+        TextureManagerGet(textures, TEXTURE_PLAYER),
+        source,
+        dest,
+        (Vector2) {
+        0, 0
+    },
+        0.0f,
         player->tint
     );
-
-    // Draw additional player effects or status indicators if needed
 }
 
 /**
