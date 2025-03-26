@@ -197,14 +197,14 @@ void RoomUpdate(Room* room, float deltaTime) {
 }
 
 /**
- * @brief Render room
- *
- * Renders a room and all its contents to the screen.
- * Only renders tiles that are visible within the camera view.
- *
- * @param room Pointer to room
- * @param camera Pointer to Camera2D
- */
+* @brief Render room
+*
+* Renders a room and all its contents to the screen.
+* Only renders tiles that are visible within the camera view.
+*
+* @param room Pointer to room
+* @param camera Pointer to Camera2D
+*/
 void RoomRender(Room* room, Camera2D* camera) {
     if (!room) return;
 
@@ -239,38 +239,46 @@ void RoomRender(Room* room, Camera2D* camera) {
             }
 
             if (isWall) {
-                // Draw wall
+                // Draw wall with configured colors
                 DrawRectangle(
                     (int)tileX,
                     (int)tileY,
                     TILE_WIDTH,
                     TILE_HEIGHT,
-                    BROWN
+                    TILE_WALL_COLOR
                 );
-                DrawRectangleLines(
-                    (int)tileX,
-                    (int)tileY,
-                    TILE_WIDTH,
-                    TILE_HEIGHT,
-                    BLACK
-                );
+
+                // Only draw border if it's not transparent
+                if (TILE_WALL_BORDER_COLOR.a > 0) {
+                    DrawRectangleLines(
+                        (int)tileX,
+                        (int)tileY,
+                        TILE_WIDTH,
+                        TILE_HEIGHT,
+                        TILE_WALL_BORDER_COLOR
+                    );
+                }
             }
             else {
-                // Draw floor
+                // Draw floor with configured colors
                 DrawRectangle(
                     (int)tileX,
                     (int)tileY,
                     TILE_WIDTH,
                     TILE_HEIGHT,
-                    LIGHTGRAY
+                    TILE_FLOOR_COLOR
                 );
-                DrawRectangleLines(
-                    (int)tileX,
-                    (int)tileY,
-                    TILE_WIDTH,
-                    TILE_HEIGHT,
-                    DARKGRAY
-                );
+
+                // Only draw border if it's not transparent
+                if (TILE_FLOOR_BORDER_COLOR.a > 0) {
+                    DrawRectangleLines(
+                        (int)tileX,
+                        (int)tileY,
+                        TILE_WIDTH,
+                        TILE_HEIGHT,
+                        TILE_FLOOR_BORDER_COLOR
+                    );
+                }
             }
         }
     }
@@ -288,12 +296,11 @@ void RoomRender(Room* room, Camera2D* camera) {
     DrawText(
         TextFormat("Room %d", room->id),
         (int)(roomX + (room->width * TILE_WIDTH) / 2 - 30),
-        (int)(roomY + (room->height * TILE_HEIGHT) /*/ 2*/-30),
+        (int)(roomY + (room->height * TILE_HEIGHT) - 30),
         20,
         BLACK
     );
 }
-
 /**
  * @brief Set tile at position in room
  *

@@ -25,6 +25,12 @@
 #define TILE_EMPTY 0
 #define TILE_WALL 1
 
+// Tile color configuration
+#define TILE_FLOOR_COLOR     (Color){ 144, 238, 144, 255 }  // Light green
+#define TILE_FLOOR_BORDER_COLOR (Color){ 0, 0, 0, 0 }       // Transparent
+#define TILE_WALL_COLOR      (Color){ 64, 64, 64, 255 }     // Dark gray
+#define TILE_WALL_BORDER_COLOR (Color){ 0, 0, 0, 0 }        // Transparent
+
 // Sprite configuration
 #define SPRITE_WIDTH 16
 #define SPRITE_HEIGHT 16

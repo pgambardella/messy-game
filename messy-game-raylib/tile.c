@@ -13,15 +13,15 @@
 #include <stdlib.h>
 
  /**
-  * @brief Create a new tile
-  *
-  * Allocates and initializes a new tile with the specified properties.
-  *
-  * @param x X position in tile grid
-  * @param y Y position in tile grid
-  * @param type Type of tile
-  * @return Tile* Pointer to the created tile
-  */
+ * @brief Create a new tile
+ *
+ * Allocates and initializes a new tile with the specified properties.
+ *
+ * @param x X position in tile grid
+ * @param y Y position in tile grid
+ * @param type Type of tile
+ * @return Tile* Pointer to the created tile
+ */
 Tile* TileCreate(int x, int y, TileType type) {
     Tile* tile = (Tile*)malloc(sizeof(Tile));
     if (!tile) {
@@ -33,7 +33,18 @@ Tile* TileCreate(int x, int y, TileType type) {
     tile->x = x;
     tile->y = y;
     tile->type = type;
-    tile->tint = WHITE;
+
+    // Set color based on tile type
+    if (type == TILE_TYPE_WALL) {
+        tile->tint = TILE_WALL_COLOR;
+    }
+    else if (type == TILE_TYPE_EMPTY) {
+        tile->tint = TILE_FLOOR_COLOR;
+    }
+    else {
+        tile->tint = WHITE; // Default tint for other types
+    }
+
     tile->data = 0;
 
     // Set default flags based on type
@@ -58,18 +69,44 @@ void TileDestroy(Tile* tile) {
 }
 
 /**
- * @brief Render tile at specified position
- *
- * @param tile Pointer to tile
- * @param posX X position to render
- * @param posY Y position to render
- */
+* @brief Render tile at specified position
+*
+* @param tile Pointer to tile
+* @param posX X position to render
+* @param posY Y position to render
+*/
 void TileRender(Tile* tile, int posX, int posY) {
     if (!tile) return;
 
     // Get renderer (normally would be passed as parameter)
     Renderer* renderer = GetRenderer();
     if (!renderer) return;
+
+    // Determine base color and border color based on tile type
+    Color baseColor;
+    Color borderColor;
+
+    if (tile->type == TILE_TYPE_WALL) {
+        baseColor = TILE_WALL_COLOR;
+        borderColor = TILE_WALL_BORDER_COLOR;
+    }
+    else if (tile->type == TILE_TYPE_EMPTY) {
+        baseColor = TILE_FLOOR_COLOR;
+        borderColor = TILE_FLOOR_BORDER_COLOR;
+    }
+    else {
+        // For other tile types, use the tile's tint
+        baseColor = tile->tint;
+        borderColor = BLANK; // Default to transparent borders
+    }
+
+    // Draw base rectangle with configured color
+    DrawRectangle(posX, posY, TILE_WIDTH, TILE_HEIGHT, baseColor);
+
+    // Only draw border if not transparent
+    if (borderColor.a > 0) {
+        DrawRectangleLines(posX, posY, TILE_WIDTH, TILE_HEIGHT, borderColor);
+    }
 
     // Render using the tile's texture coordinates
     RendererDrawTileFromSheet(
@@ -98,13 +135,10 @@ void TileRender(Tile* tile, int posX, int posY) {
         // Draw slippery indicator (blue corners)
         DrawLine(posX, posY, posX + 4, posY, BLUE);
         DrawLine(posX, posY, posX, posY + 4, BLUE);
-
         DrawLine(posX + TILE_WIDTH - 4, posY, posX + TILE_WIDTH, posY, BLUE);
         DrawLine(posX + TILE_WIDTH, posY, posX + TILE_WIDTH, posY + 4, BLUE);
-
         DrawLine(posX, posY + TILE_HEIGHT, posX + 4, posY + TILE_HEIGHT, BLUE);
         DrawLine(posX, posY + TILE_HEIGHT - 4, posX, posY + TILE_HEIGHT, BLUE);
-
         DrawLine(posX + TILE_WIDTH - 4, posY + TILE_HEIGHT, posX + TILE_WIDTH, posY + TILE_HEIGHT, BLUE);
         DrawLine(posX + TILE_WIDTH, posY + TILE_HEIGHT - 4, posX + TILE_WIDTH, posY + TILE_HEIGHT, BLUE);
     }

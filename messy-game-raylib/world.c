@@ -83,13 +83,13 @@ void WorldUpdate(World* world, float deltaTime) {
 }
 
 /**
- * @brief Render the world
- *
- * This function renders all visible tiles in the world.
- * Only tiles that are visible on screen are rendered for efficiency.
- *
- * @param world Pointer to world
- */
+* @brief Render the world
+*
+* This function renders all visible tiles in the world.
+* Only tiles that are visible on screen are rendered for efficiency.
+*
+* @param world Pointer to world
+*/
 void WorldRender(World* world) {
     if (!world) return;
 
@@ -100,26 +100,36 @@ void WorldRender(World* world) {
             // Get the current camera (would normally be passed as parameter)
             Camera2D camera = { 0 };
             camera.zoom = CAMERA_ZOOM;
-
             RoomRender(currentRoom, &camera);
             return;
         }
     }
 
-    // If there's no room, render a simple grid
+    // If there's no room, render a simple grid with floor tiles
     for (int x = 0; x < world->width; x++) {
         for (int y = 0; y < world->height; y++) {
-            DrawRectangleLines(
+            // Draw floor tile
+            DrawRectangle(
                 x * TILE_WIDTH,
                 y * TILE_HEIGHT,
                 TILE_WIDTH,
                 TILE_HEIGHT,
-                LIGHTGRAY
+                TILE_FLOOR_COLOR
             );
+
+            // Only draw border if it's not transparent
+            if (TILE_FLOOR_BORDER_COLOR.a > 0) {
+                DrawRectangleLines(
+                    x * TILE_WIDTH,
+                    y * TILE_HEIGHT,
+                    TILE_WIDTH,
+                    TILE_HEIGHT,
+                    TILE_FLOOR_BORDER_COLOR
+                );
+            }
         }
     }
 }
-
 /**
 * @brief Check if a position has a wall or is outside world boundaries
 *
