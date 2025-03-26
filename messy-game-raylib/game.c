@@ -231,32 +231,35 @@ void InitializeWorldLayout(World* world, GameCamera* camera) {
         }
     }
 
-    // Create boundary walls
-    int visibleWidthInTiles = (int)(SCREEN_WIDTH / (TILE_WIDTH * CAMERA_ZOOM)); 
-    int visibleHeightInTiles = (int)(SCREEN_HEIGHT / (TILE_HEIGHT * CAMERA_ZOOM));
+    // Define the visible area based on camera properties
+    float cameraZoom = CAMERA_ZOOM;
+    int screenWidthInTiles = (int)(SCREEN_WIDTH / (TILE_WIDTH * cameraZoom));
+    int screenHeightInTiles = (int)(SCREEN_HEIGHT / (TILE_HEIGHT * cameraZoom));
 
-    // Calculate tile positions for screen edges
-    int leftEdge = (world->width / 2) - (visibleWidthInTiles / 2);
-    int rightEdge = (world->width / 2) + (visibleWidthInTiles / 2);
-    int topEdge = (world->height / 2) - (visibleHeightInTiles / 2);
-    int bottomEdge = (world->height / 2) + (visibleHeightInTiles / 2);
+    // Calculate the visible portion of the world
+    int centerX = world->width / 2;
+    int centerY = world->height / 2;
 
-    // Create top and bottom walls
+    int leftEdge = centerX - (screenWidthInTiles / 2);
+    int rightEdge = centerX + (screenWidthInTiles / 2);
+    int topEdge = centerY - (screenHeightInTiles / 2);
+    int bottomEdge = centerY + (screenHeightInTiles / 2);
+
+    TraceLog(LOG_INFO, "Visible area: left=%d, right=%d, top=%d, bottom=%d",
+        leftEdge, rightEdge, topEdge, bottomEdge);
+
+    // Create walls at the VISIBLE borders
     for (int i = leftEdge; i <= rightEdge; i++) {
         WorldSetTileType(world, i, topEdge, TILE_TYPE_WALL);
         WorldSetTileType(world, i, bottomEdge, TILE_TYPE_WALL);
     }
 
-    // Create left and right walls
     for (int j = topEdge; j <= bottomEdge; j++) {
         WorldSetTileType(world, leftEdge, j, TILE_TYPE_WALL);
         WorldSetTileType(world, rightEdge, j, TILE_TYPE_WALL);
     }
 
     // Add some walls in the middle for obstacles
-    int centerX = world->width / 2;
-    int centerY = world->height / 2;
-
     // Small horizontal wall
     for (int i = centerX - 5; i <= centerX + 5; i++) {
         WorldSetTileType(world, i, centerY, TILE_TYPE_WALL);
@@ -268,13 +271,8 @@ void InitializeWorldLayout(World* world, GameCamera* camera) {
         WorldSetTileType(world, centerX - 10, j, TILE_TYPE_WALL);
     }
 
-    // Update your game->camera setup
-    camera->camera.target = (Vector2){ (float)centerX * TILE_WIDTH, (float)centerY * TILE_HEIGHT };
-    camera->camera.zoom = CAMERA_ZOOM; 
-
+    // Set up camera
     if (camera) {
-        int centerX = world->width / 2;
-        int centerY = world->height / 2;
         camera->camera.target = (Vector2){ (float)(centerX * TILE_WIDTH), (float)(centerY * TILE_HEIGHT) };
         camera->camera.zoom = CAMERA_ZOOM;
     }
@@ -749,6 +747,41 @@ Entity* GameSetSnakeBoss(Game* game, int gridX, int gridY, int initialLength) {
         TraceLog(LOG_ERROR, "Failed to add snake boss to entities");
         EntityDestroy(snakeBoss);
         return NULL;
+    }
+
+    // Force the snake to start tracking the ball immediately
+    if (game->ball) {
+        SnakeBossData* bossData = SnakeBossGetData(snakeBoss);
+        if (bossData) {
+            // Convert ball position to grid coordinates
+            int ballGridX = (int)(game->ball->x / TILE_WIDTH);
+            int ballGridY = (int)(game->ball->y / TILE_HEIGHT);
+
+            // Set target to ball position
+            bossData->targetGridX = ballGridX;
+            bossData->targetGridY = ballGridY;
+            bossData->hasTarget = true;
+            bossData->state = SNAKE_STATE_MOVING; // Skip to moving state immediately
+
+            // Increase initial speed
+            bossData->moveInterval = 0.5f; // Faster initial movement
+
+            // Set direction toward the ball
+            int dx = ballGridX - gridX;
+            int dy = ballGridY - gridY;
+
+            if (abs(dx) > abs(dy)) {
+                bossData->currentDir = dx > 0 ? DIRECTION_RIGHT : DIRECTION_LEFT;
+                bossData->nextDir = bossData->currentDir;
+            }
+            else {
+                bossData->currentDir = dy > 0 ? DIRECTION_DOWN : DIRECTION_UP;
+                bossData->nextDir = bossData->currentDir;
+            }
+
+            TraceLog(LOG_INFO, "Snake boss targeting ball at (%d,%d), direction: %d",
+                ballGridX, ballGridY, bossData->currentDir);
+        }
     }
 
     TraceLog(LOG_INFO, "Snake boss added to game at grid position (%d, %d)", gridX, gridY);

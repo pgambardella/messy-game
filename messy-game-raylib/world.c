@@ -121,17 +121,18 @@ void WorldRender(World* world) {
 }
 
 /**
- * @brief Check if a position has a wall
- *
- * This function converts world coordinates to tile coordinates and
- * checks if the tile at that position is a wall or other solid object.
- *
- * @param world Pointer to world
- * @param x X position in world coordinates
- * @param y Y position in world coordinates
- * @return true If position contains a wall
- * @return false If position is open space
- */
+* @brief Check if a position has a wall or is outside world boundaries
+*
+* This function converts world coordinates to tile coordinates and
+* checks if the tile at that position is a wall or if the position is beyond
+* the world boundaries.
+*
+* @param world Pointer to world
+* @param x X position in world coordinates
+* @param y Y position in world coordinates
+* @return true If position contains a wall or is out of bounds
+* @return false If position is open space
+*/
 bool WorldIsWallAtPosition(World* world, float x, float y) {
     if (!world) return true; // Treat null world as impassable
 
@@ -139,37 +140,60 @@ bool WorldIsWallAtPosition(World* world, float x, float y) {
     int tileX = (int)(x / TILE_WIDTH);
     int tileY = (int)(y / TILE_HEIGHT);
 
+    // Log collision check for debugging
+    // TraceLog(LOG_DEBUG, "Checking wall at world pos (%.1f,%.1f) -> tile (%d,%d)", x, y, tileX, tileY);
+
     // Check bounds
     if (tileX < 0 || tileX >= world->width || tileY < 0 || tileY >= world->height) {
+        // TraceLog(LOG_DEBUG, "OUT OF BOUNDS at (%d,%d)", tileX, tileY);
         return true; // Out of bounds is considered a wall
     }
 
-    // In a full implementation, we would check the tile type
-    // For this stub, let's consider borders as walls
-    if (tileX == 0 || tileY == 0 || tileX == world->width - 1 || tileY == world->height - 1) {
-        return true;
-    }
+    // IMPORTANT: This is a simplification. In your implementation, check the actual
+    // tile type in your tile data structure. For example:
+    // return world->tiles[tileY * world->width + tileX].type == TILE_TYPE_WALL;
 
-    // Add some obstacles in the middle for testing
+    // For now, we'll use hardcoded wall positions
+
+    // Get visible dimensions based on camera zoom
+    float cameraZoom = CAMERA_ZOOM;
+    int screenWidthInTiles = (int)(SCREEN_WIDTH / (TILE_WIDTH * cameraZoom));
+    int screenHeightInTiles = (int)(SCREEN_HEIGHT / (TILE_HEIGHT * cameraZoom));
+
+    // Calculate visible area
     int centerX = world->width / 2;
     int centerY = world->height / 2;
 
+    int leftEdge = centerX - (screenWidthInTiles / 2);
+    int rightEdge = centerX + (screenWidthInTiles / 2);
+    int topEdge = centerY - (screenHeightInTiles / 2);
+    int bottomEdge = centerY + (screenHeightInTiles / 2);
+
+    // Check if position is at visible border
+    if ((tileX == leftEdge || tileX == rightEdge) && (tileY >= topEdge && tileY <= bottomEdge)) {
+        return true;
+    }
+
+    if ((tileY == topEdge || tileY == bottomEdge) && (tileX >= leftEdge && tileX <= rightEdge)) {
+        return true;
+    }
+
+    // Check the middle obstacles
     // Horizontal wall in the middle
     if (tileY == centerY && abs(tileX - centerX) <= 5) {
         return true;
     }
 
     // Vertical walls on sides
-    if (tileX == centerX - 10 && abs(tileY - centerY) <= 3) {
+    if ((tileX == centerX - 10 || tileX == centerX + 10) && abs(tileY - centerY) <= 3) {
         return true;
     }
 
-    if (tileX == centerX + 10 && abs(tileY - centerY) <= 3) {
-        return true;
-    }
-
+    // Not a wall
     return false;
 }
+
+
 
 /**
  * @brief Load a world from file

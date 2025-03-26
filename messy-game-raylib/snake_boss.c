@@ -106,6 +106,10 @@ Entity* SnakeBossCreate(int gridX, int gridY, int initialLength) {
     float worldX = gridX * TILE_WIDTH + TILE_WIDTH / 2.0f;
     float worldY = gridY * TILE_HEIGHT + TILE_HEIGHT / 2.0f;
 
+    // Print debug info
+    TraceLog(LOG_INFO, "Creating snake boss at grid (%d,%d), world (%.1f,%.1f)",
+        gridX, gridY, worldX, worldY);
+
     // Create base entity
     Entity* snakeBoss = EntityCreate(ENTITY_ENEMY, worldX, worldY, TILE_WIDTH, TILE_HEIGHT);
     if (!snakeBoss) {
@@ -123,7 +127,7 @@ Entity* SnakeBossCreate(int gridX, int gridY, int initialLength) {
 
     // Initialize snake boss data
     bossData->state = SNAKE_STATE_IDLE;
-    bossData->currentDir = DIRECTION_RIGHT;
+    bossData->currentDir = DIRECTION_RIGHT; // Start moving right instead of down
     bossData->nextDir = DIRECTION_RIGHT;
     bossData->moveTimer = 0.0f;
     bossData->moveInterval = SNAKE_INITIAL_MOVE_INTERVAL;
@@ -149,7 +153,7 @@ Entity* SnakeBossCreate(int gridX, int gridY, int initialLength) {
         return NULL;
     }
 
-    // Initialize segments
+    // Initialize segments HORIZONTALLY (not vertically)
     bossData->segmentCount = initialLength;
     for (int i = 0; i < initialLength; i++) {
         // Position segments in a row to the left of the head
@@ -159,6 +163,10 @@ Entity* SnakeBossCreate(int gridX, int gridY, int initialLength) {
         // Convert to world coordinates
         bossData->segments[i].worldX = bossData->segments[i].gridX * TILE_WIDTH + TILE_WIDTH / 2.0f;
         bossData->segments[i].worldY = bossData->segments[i].gridY * TILE_HEIGHT + TILE_HEIGHT / 2.0f;
+
+        TraceLog(LOG_DEBUG, "Snake segment %d: grid (%d,%d), world (%.1f,%.1f)",
+            i, bossData->segments[i].gridX, bossData->segments[i].gridY,
+            bossData->segments[i].worldX, bossData->segments[i].worldY);
     }
 
     // Attach snake data to entity
@@ -196,15 +204,30 @@ void SnakeBossUpdate(Entity* snakeBoss, World* world, Entity* ball, Entity* play
     switch (bossData->state) {
     case SNAKE_STATE_IDLE:
     {
-        // Transition to tracking state
-        bossData->state = SNAKE_STATE_TRACKING;
-        bossData->hasTarget = false;  // Force target recalculation
+        // Get initial ball position immediately
+        int ballGridX = (int)(ball->x / TILE_WIDTH);
+        int ballGridY = (int)(ball->y / TILE_HEIGHT);
+
+        // Set target to ball position
+        bossData->targetGridX = ballGridX;
+        bossData->targetGridY = ballGridY;
+        bossData->hasTarget = true;
+
+        // Calculate initial path to ball
+        SnakeBossFindPath(snakeBoss, ballGridX, ballGridY, world);
+
+        // Transition to moving state directly (skip tracking)
+        bossData->state = SNAKE_STATE_MOVING;
+
+        // Add debug output
+        TraceLog(LOG_DEBUG, "Snake IDLE: Initial target set to ball at (%d,%d)",
+            ballGridX, ballGridY);
     }
     break;
 
     case SNAKE_STATE_TRACKING:
     {
-        // Always update the target position to follow the ball more aggressively
+        // Always update target position with current ball position
         int ballGridX = (int)(ball->x / TILE_WIDTH);
         int ballGridY = (int)(ball->y / TILE_HEIGHT);
 
@@ -213,10 +236,14 @@ void SnakeBossUpdate(Entity* snakeBoss, World* world, Entity* ball, Entity* play
         bossData->targetGridY = ballGridY;
         bossData->hasTarget = true;
 
-        // Find path to target
+        // Log tracking info
+        TraceLog(LOG_INFO, "Snake tracking: Current pos=(%d,%d), Ball pos=(%d,%d)",
+            bossData->segments[0].gridX, bossData->segments[0].gridY, ballGridX, ballGridY);
+
+        // Find path to target with more aggressive parameters
         SnakeBossFindPath(snakeBoss, ballGridX, ballGridY, world);
 
-        // Transition to moving state
+        // Transition to moving state immediately
         bossData->state = SNAKE_STATE_MOVING;
     }
     break;
@@ -334,25 +361,12 @@ void SnakeBossFindPath(Entity* snakeBoss, int targetGridX, int targetGridY, Worl
     int headGridX = bossData->segments[0].gridX;
     int headGridY = bossData->segments[0].gridY;
 
-    TraceLog(LOG_DEBUG, "Snake finding path from (%d,%d) to (%d,%d)",
-        headGridX, headGridY, targetGridX, targetGridY);
-
-    // Calculate direction to target (simple direct approach - not A*)
+    // Calculate direction to target
     int dx = targetGridX - headGridX;
     int dy = targetGridY - headGridY;
 
-    // Determine the preferred direction
-    Direction preferredDir = DIRECTION_RIGHT;  // Default
-
-    // Choose direction based on which axis has the greater distance
-    if (abs(dx) > abs(dy)) {
-        // Prefer horizontal movement
-        preferredDir = (dx > 0) ? DIRECTION_RIGHT : DIRECTION_LEFT;
-    }
-    else {
-        // Prefer vertical movement
-        preferredDir = (dy > 0) ? DIRECTION_DOWN : DIRECTION_UP;
-    }
+    TraceLog(LOG_INFO, "Snake at (%d,%d) seeking ball at (%d,%d), dx=%d, dy=%d",
+        headGridX, headGridY, targetGridX, targetGridY, dx, dy);
 
     // Get opposite of current direction (to avoid reversing)
     Direction oppositeDir;
@@ -364,35 +378,79 @@ void SnakeBossFindPath(Entity* snakeBoss, int targetGridX, int targetGridY, Worl
     default: oppositeDir = DIRECTION_DOWN; break;
     }
 
-    // First, try the preferred direction
-    if (preferredDir != oppositeDir && CheckDirectionValidity(snakeBoss, preferredDir, world)) {
-        bossData->nextDir = preferredDir;
-        TraceLog(LOG_DEBUG, "Snake chose preferred direction: %d", preferredDir);
-        return;
+    // Calculate current Manhattan distance to target
+    int currentDist = abs(dx) + abs(dy);
+
+    // Create arrays for the four primary directions
+    Direction directions[4] = { DIRECTION_UP, DIRECTION_RIGHT, DIRECTION_DOWN, DIRECTION_LEFT };
+    int newDists[4] = { 0, 0, 0, 0 };
+    bool validDirs[4] = { false, false, false, false };
+
+    // Calculate new positions and distances for each direction
+    int newX, newY;
+
+    // Check UP
+    newX = headGridX;
+    newY = headGridY - 1;
+    newDists[0] = abs(targetGridX - newX) + abs(targetGridY - newY);
+    validDirs[0] = SnakeBossIsValidPosition(snakeBoss, newX, newY, world) && DIRECTION_UP != oppositeDir;
+
+    // Check RIGHT
+    newX = headGridX + 1;
+    newY = headGridY;
+    newDists[1] = abs(targetGridX - newX) + abs(targetGridY - newY);
+    validDirs[1] = SnakeBossIsValidPosition(snakeBoss, newX, newY, world) && DIRECTION_RIGHT != oppositeDir;
+
+    // Check DOWN
+    newX = headGridX;
+    newY = headGridY + 1;
+    newDists[2] = abs(targetGridX - newX) + abs(targetGridY - newY);
+    validDirs[2] = SnakeBossIsValidPosition(snakeBoss, newX, newY, world) && DIRECTION_DOWN != oppositeDir;
+
+    // Check LEFT
+    newX = headGridX - 1;
+    newY = headGridY;
+    newDists[3] = abs(targetGridX - newX) + abs(targetGridY - newY);
+    validDirs[3] = SnakeBossIsValidPosition(snakeBoss, newX, newY, world) && DIRECTION_LEFT != oppositeDir;
+
+    // Choose best valid direction (minimum distance)
+    Direction bestDir = bossData->currentDir;
+    int bestDist = 999999;
+    bool foundValid = false;
+
+    for (int i = 0; i < 4; i++) {
+        if (validDirs[i]) {
+            // Log each valid direction and its distance
+            TraceLog(LOG_DEBUG, "Direction %d is valid, distance: %d",
+                directions[i], newDists[i]);
+
+            if (!foundValid || newDists[i] < bestDist) {
+                bestDist = newDists[i];
+                bestDir = directions[i];
+                foundValid = true;
+            }
+        }
     }
 
-    // If preferred direction is invalid or would go backwards, try the other axis
-    Direction secondaryDir;
-    if (preferredDir == DIRECTION_RIGHT || preferredDir == DIRECTION_LEFT) {
-        // If horizontal didn't work, try vertical
-        secondaryDir = (dy > 0) ? DIRECTION_DOWN : DIRECTION_UP;
+    // If we found a valid direction that gets us closer to the target
+    if (foundValid && bestDist <= currentDist) {
+        bossData->nextDir = bestDir;
+        TraceLog(LOG_INFO, "Snake chose OPTIMAL direction %d, distance: %d -> %d",
+            bestDir, currentDist, bestDist);
     }
+    // If we found any valid direction but it doesn't get us closer
+    else if (foundValid) {
+        bossData->nextDir = bestDir;
+        TraceLog(LOG_INFO, "Snake chose direction %d, but distance increased: %d -> %d",
+            bestDir, currentDist, bestDist);
+    }
+    // If no valid direction found (should be rare)
     else {
-        // If vertical didn't work, try horizontal
-        secondaryDir = (dx > 0) ? DIRECTION_RIGHT : DIRECTION_LEFT;
+        // Keep current direction
+        TraceLog(LOG_WARNING, "No valid direction found, keeping current: %d", bossData->currentDir);
     }
-
-    if (secondaryDir != oppositeDir && CheckDirectionValidity(snakeBoss, secondaryDir, world)) {
-        bossData->nextDir = secondaryDir;
-        TraceLog(LOG_DEBUG, "Snake chose secondary direction: %d", secondaryDir);
-        return;
-    }
-
-    // If both preferred directions failed, try any valid direction
-    Direction anyDir = FindAnyValidDirection(snakeBoss, world, oppositeDir);
-    bossData->nextDir = anyDir;
-    TraceLog(LOG_DEBUG, "Snake chose any valid direction: %d", anyDir);
 }
+
 
 /**
 * @brief Move the snake boss one step in its current direction
