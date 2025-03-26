@@ -14,11 +14,11 @@
 
 #define PLAYER_BASE_KICK_FORCE 5.0f       // Base kick force
 #define PLAYER_BASE_MOVE_SPEED 1.0f       // Base movement multiplier
-#define PLAYER_KICK_FORCE_PER_LEVEL 0.5f  // 50% kick force increase per level
-#define PLAYER_MOVE_SPEED_PER_LEVEL 0.5f  // 50% speed increase per level
+#define PLAYER_KICK_FORCE_PER_LEVEL 0.2f  // 20% kick force increase per level
+#define PLAYER_MOVE_SPEED_PER_LEVEL 0.1f  // 10% speed increase per level
 #define PLAYER_XP_PER_HIT 110.0f           // XP gained per successful enemy hit
 #define PLAYER_BASE_MAX_XP 100.0f         // XP needed for first level up
-#define PLAYER_XP_SCALE_FACTOR 1.1f       // Each level requires 10% more XP
+#define PLAYER_XP_SCALE_FACTOR 3.0f       // Each level requires 50% more XP
 
 
 

@@ -106,7 +106,8 @@ void RendererDrawHUD(Renderer* renderer, Entity* player) {
     }
 
     // Draw game controls reminder (bottom of screen)
-    //DrawText("WASD: Move | SPACE: Attack | E: Interact | R: Reset", 10, GetScreenHeight() - 30, 16, WHITE);
+    DrawText("WASD: Move | SPACE: Attack | E: Interact | R: Reset",
+        10, GetScreenHeight() - 30, 16, WHITE);
 }
 
 /**
