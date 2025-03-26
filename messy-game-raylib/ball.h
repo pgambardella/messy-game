@@ -27,19 +27,31 @@ typedef enum {
 } BallType;
 
 /**
+* @brief Ball state enumeration
+*
+* Defines the current state of the ball based on its last interaction.
+*/
+typedef enum {
+    BALL_STATE_NEUTRAL, // White, neutral state
+    BALL_STATE_PLAYER,  // Blue, kicked by player, damages snake
+    BALL_STATE_SNAKE    // Red, kicked by snake, damages player
+} BallState;
+
+/**
  * @brief Ball-specific data
  *
  * Extended data for ball entities.
  */
 typedef struct {
-    BallType type;             // Type of ball
-    float radius;              // Ball radius
-    float bounceFactor;        // How bouncy the ball is
-    float friction;            // How quickly the ball slows down
-    float damage;              // Damage dealt to enemies
-    Color innerColor;          // Inner color for special effects
-    Color outerColor;          // Outer color for special effects
-    bool hasSpecialEffect;     // Whether ball has special effects
+    BallType type;         // Type of ball
+    BallState state;       // Current state of the ball
+    float radius;          // Ball radius
+    float bounceFactor;    // How bouncy the ball is
+    float friction;        // How quickly the ball slows down
+    float damage;          // Damage dealt to enemies
+    Color innerColor;      // Inner color for special effects
+    Color outerColor;      // Outer color for special effects
+    bool hasSpecialEffect; // Whether ball has special effects
     // Add more ball-specific attributes as needed
 } BallData;
 

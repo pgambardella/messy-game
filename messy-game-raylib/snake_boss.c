@@ -590,10 +590,6 @@ bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball) {
     BallData* ballData = BallGetData(ball);
     if (!ballData) return false;
 
-    // Check if ball is moving fast (indicating it was hit by player)
-    bool ballIsProjectile = (fabs(ball->speedX) > BALL_INITIAL_SPEED * 1.5f ||
-        fabs(ball->speedY) > BALL_INITIAL_SPEED * 1.5f);
-
     // Check collision with head
     float headX = bossData->segments[0].worldX;
     float headY = bossData->segments[0].worldY;
@@ -602,8 +598,8 @@ bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball) {
 
     if (distance < SNAKE_HEAD_RADIUS + ballData->radius) {
         // Collision with head
-        if (ballIsProjectile) {
-            // Ball was hit by player - shrink snake
+        if (ballData->state == BALL_STATE_PLAYER) {
+            // Blue ball (hit by player) - always damages snake
             if (bossData->state != SNAKE_STATE_SHRINKING && bossData->state != SNAKE_STATE_DEFEATED) {
                 bossData->state = SNAKE_STATE_SHRINKING;
                 bossData->shrinkTimer = 0.0f;
@@ -616,10 +612,12 @@ bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball) {
 
                 // Bounce ball
                 BallApplyForce(ball, (ball->x - headX) * 0.5f, (ball->y - headY) * 0.5f);
+
+                TraceLog(LOG_INFO, "BLUE ball damaged snake! Segments left: %d", bossData->segmentCount);
             }
         }
         else {
-            // Normal collision - grow snake
+            // White or red ball - grow snake
             if (bossData->state != SNAKE_STATE_GROWING) {
                 bossData->state = SNAKE_STATE_GROWING;
                 bossData->growTimer = 0.0f;
@@ -627,17 +625,25 @@ bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball) {
                 // Grow snake
                 SnakeBossGrow(snakeBoss);
 
-                // Kick ball away
+                // Kick ball away and change to red
                 float kickForce = 6.0f;
                 BallApplyForce(ball, (ball->x - headX) * kickForce, (ball->y - headY) * kickForce);
+
+                // Change ball state to SNAKE (red)
+                ballData->state = BALL_STATE_SNAKE;
+                ballData->innerColor = RED;
+                ballData->outerColor = MAROON;
+
+                TraceLog(LOG_INFO, "Ball eaten by snake, changed to SNAKE state (red). Snake grew to %d segments",
+                    bossData->segmentCount);
             }
         }
 
         return true;
     }
 
-    // Check collision with body segments (only if ball is a projectile)
-    if (ballIsProjectile) {
+    // Check collision with body segments (only if ball is in PLAYER state)
+    if (ballData->state == BALL_STATE_PLAYER) {
         for (int i = 1; i < bossData->segmentCount; i++) {
             float segX = bossData->segments[i].worldX;
             float segY = bossData->segments[i].worldY;
@@ -665,6 +671,8 @@ bool SnakeBossHandleBallCollision(Entity* snakeBoss, Entity* ball) {
 
                     // Bounce ball
                     BallApplyForce(ball, (ball->x - segX) * 0.5f, (ball->y - segY) * 0.5f);
+
+                    TraceLog(LOG_INFO, "BLUE ball hit snake body! Segments left: %d", bossData->segmentCount);
                 }
 
                 return true;

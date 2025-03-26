@@ -7,6 +7,7 @@
 #include <math.h>
 #include "ball.h"
 #include "config.h"
+#include "player.h"
 
  /**
   * @brief Create a new ball entity
@@ -42,6 +43,9 @@ Entity* BallCreate(BallType type, float x, float y) {
     ballData->friction = BALL_FRICTION;
     ballData->damage = 10.0f; // Default damage value
     ballData->hasSpecialEffect = false;
+    ballData->state = BALL_STATE_NEUTRAL;
+    ballData->innerColor = WHITE;
+    ballData->outerColor = WHITE;
 
     // Set type-specific properties
     switch (type) {
@@ -141,6 +145,18 @@ void BallUpdate(Entity* ball, World* world, Entity* player, float deltaTime) {
 
         default:
             break;
+        }
+    }
+
+    // Check if ball should return to neutral state based on speed
+    float speedMagnitude = sqrtf(ball->speedX * ball->speedX + ball->speedY * ball->speedY);
+    if (speedMagnitude < BALL_INITIAL_SPEED * 0.5f) {
+        BallData* ballData = (BallData*)ball->typeData;
+        if (ballData && ballData->state != BALL_STATE_NEUTRAL) {
+            ballData->state = BALL_STATE_NEUTRAL;
+            ballData->innerColor = WHITE;
+            ballData->outerColor = WHITE;
+            TraceLog(LOG_INFO, "Ball speed reduced, returning to NEUTRAL state");
         }
     }
 
@@ -277,8 +293,27 @@ void BallHandlePlayerCollision(Entity* ball, Entity* player) {
             ball->speedX *= scale;
             ball->speedY *= scale;
         }
+
+        // Check if ball is in SNAKE state (red) - only then damage player
+        if (ballData->state == BALL_STATE_SNAKE) {
+            // Apply damage to player
+            PlayerData* playerData = PlayerGetData(player);
+            if (playerData) {
+                playerData->currentHealth -= 10.0f;
+                if (playerData->currentHealth < 0) playerData->currentHealth = 0;
+                TraceLog(LOG_INFO, "RED ball damaged player! Health: %.1f", playerData->currentHealth);
+            }
+        }
+
+        // Change ball to PLAYER state (blue) when hit by player
+        ballData->state = BALL_STATE_PLAYER;
+        ballData->innerColor = BLUE;
+        ballData->outerColor = SKYBLUE;
+
+        TraceLog(LOG_INFO, "Ball hit by player, changed to PLAYER state (blue)");
     }
 }
+
 
 /**
  * @brief Render ball with appropriate effects
@@ -291,31 +326,25 @@ void BallRender(Entity* ball) {
     BallData* ballData = (BallData*)ball->typeData;
     if (!ballData) return;
 
-    // Draw ball
-    DrawCircle((int)ball->x, (int)ball->y, ballData->radius, ballData->innerColor);
+    // Draw ball based on its current state
+    switch (ballData->state) {
+    case BALL_STATE_PLAYER:
+        // Blue ball with effect
+        DrawCircle((int)ball->x, (int)ball->y, ballData->radius, BLUE);
+        DrawCircleLines((int)ball->x, (int)ball->y, ballData->radius + 1, SKYBLUE);
+        break;
 
-    // Draw special effects based on ball type
-    if (ballData->hasSpecialEffect) {
-        switch (ballData->type) {
-        case BALL_TYPE_FIRE:
-            // Fire effect (e.g., glow, particles)
-            DrawCircleLines((int)ball->x, (int)ball->y, ballData->radius + 1, (Color) { 255, 200, 0, 150 });
-            break;
+    case BALL_STATE_SNAKE:
+        // Red ball with effect
+        DrawCircle((int)ball->x, (int)ball->y, ballData->radius, RED);
+        DrawCircleLines((int)ball->x, (int)ball->y, ballData->radius + 1, MAROON);
+        break;
 
-        case BALL_TYPE_ICE:
-            // Ice effect (e.g., frost particles)
-            DrawCircleLines((int)ball->x, (int)ball->y, ballData->radius + 1, (Color) { 150, 200, 255, 150 });
-            break;
-
-        case BALL_TYPE_LIGHTNING:
-            // Lightning effect (e.g., electric arcs)
-            DrawCircleLines((int)ball->x, (int)ball->y, ballData->radius + 2, (Color) { 220, 220, 255, 150 });
-            DrawCircleLines((int)ball->x, (int)ball->y, ballData->radius + 1, (Color) { 255, 255, 100, 200 });
-            break;
-
-        default:
-            break;
-        }
+    case BALL_STATE_NEUTRAL:
+    default:
+        // Neutral white ball
+        DrawCircle((int)ball->x, (int)ball->y, ballData->radius, WHITE);
+        break;
     }
 }
 
