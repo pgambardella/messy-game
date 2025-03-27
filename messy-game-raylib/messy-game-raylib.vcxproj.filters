@@ -126,6 +126,9 @@
     <ClCompile Include="snake_boss.c">
       <Filter>Source Files\entities</Filter>
     </ClCompile>
+    <ClCompile Include="win_condition.c">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h">
@@ -167,8 +170,8 @@
     <ClInclude Include="snake_boss.h">
       <Filter>Header Files\entities</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="CMakeLists.txt" />
+    <ClInclude Include="win_condition.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

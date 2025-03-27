@@ -62,4 +62,27 @@
 // Animation configuration
 #define ANIM_FRAME_SPEED 6  // Frames to wait before changing animation frame
 
+// Win condition hole configuration
+#define WIN_HOLE_RADIUS 12.0f                // Radius of the hole
+#define WIN_HOLE_DEFAULT_X 1.0f              // Position as percentage of room width (center)
+#define WIN_HOLE_DEFAULT_Y 0.5f              // Position as percentage of room height (center)
+#define WIN_HOLE_COLOR DARKPURPLE			 // win condition hole
+
+// Win condition damage settings
+#define WIN_PLAYER_DAMAGE_TO_ENEMIES 50.0f   // Damage to all enemies when player scores
+#define WIN_PLAYER_SEGMENTS_SNAKEBOSS 3	     // Segments to shrink from all snake bosses
+#define WIN_ENEMY_DAMAGE_TO_PLAYER 30.0f     // Damage to player when enemy scores
+
+// Win condition timers
+#define WIN_NEUTRAL_BALL_HOLD_TIME 2.0f      // Time in seconds before white ball is ejected
+#define WIN_FLASH_TEXT_DURATION 2.0f         // Time in seconds for "FLASH!!" text to display
+
+// Win condition visual effects
+#define WIN_THUNDER_PARTICLE_COUNT 500        // Number of particles for thunder effect
+#define WIN_THUNDER_PARTICLE_SPEED 0.5f      // Speed of thunder particles
+#define WIN_THUNDER_PARTICLE_SIZE 1.5f       // Size of thunder particles
+#define WIN_THUNDER_PARTICLE_COLOR DARKPURPLE  // Yellow
+#define WIN_FLASH_TEXT_COLOR DARKPURPLE		 // Yellow
+#define WIN_FLASH_TEXT_SIZE 50               // Font size for "FLASH!!" text
+
 #endif // MESSY_GAME_CONFIG_H

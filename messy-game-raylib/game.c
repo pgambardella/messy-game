@@ -86,6 +86,9 @@ Game* GameCreate(int screenWidth, int screenHeight) {
     game->ball = NULL;
     game->world = NULL;
 
+    // Initialize win condition pointer to NULL
+    game->winCondition = NULL;
+
     return game;
 }
 
@@ -113,6 +116,11 @@ void GameDestroy(Game* game) {
     CameraDestroy(game->camera);
     RendererDestroy(game->renderer);
     TextureManagerDestroy(game->textures);
+
+    // Free win condition if it exists
+    if (game->winCondition) {
+        WinConditionDestroy(game->winCondition);
+    }
 
     // Free game structure
     free(game);
@@ -156,6 +164,13 @@ bool GameInitialize(Game* game) {
 
     // Initialize world with basic layout
     InitializeWorldLayout(game->world, game->camera);
+
+    // Initialize win condition
+    game->winCondition = InitializeWinCondition(game->world, game->camera);
+    if (!game->winCondition) {
+        TraceLog(LOG_WARNING, "Failed to create win condition, game will continue without it");
+        // Continue anyway, win condition is not critical
+    }
 
     // Create player
     game->player = GameSetPlayer(game, PLAYER_TYPE_KNIGHT);
@@ -320,19 +335,25 @@ void GameUpdate(Game* game) {
         // Update world
         WorldUpdate(game->world, game->deltaTime);
 
-        /**
-* Update GameUpdate function in game.c to handle the snake boss
-* Add this code block within the main if (game->state == GAME_STATE_PLAYING) block
-* in the GameUpdate function:
-*/
-
-// Update snake boss entities
+        // Update snake boss entities
         for (int i = 0; i < game->entityCount; i++) {
             Entity* entity = game->entities[i];
             if (IsSnakeBoss(entity)) {
                 // Update the snake boss
                 SnakeBossUpdate(entity, game->world, game->ball, game->player, game->deltaTime);
             }
+        }
+
+        // Update win condition
+        if (game->winCondition) {
+            WinConditionUpdate(
+                game->winCondition,
+                game->ball,
+                game->player,
+                game->entities,
+                game->entityCount,
+                game->deltaTime
+            );
         }
     }
 
@@ -369,6 +390,11 @@ void GameRender(Game* game) {
             continue; // Skip the default EntityRender
         }
         EntityRender(game->entities[i]);
+    }
+
+    // Render win condition
+    if (game->winCondition) {
+        WinConditionRender(game->winCondition);
     }
 
     // Render ball
@@ -519,6 +545,12 @@ void GameReset(Game* game) {
 
     // Set game state to playing
     GameChangeState(game, GAME_STATE_PLAYING);
+
+    // Reset win condition if it exists (reinitialize at center of world)
+    if (game->winCondition) {
+        WinConditionDestroy(game->winCondition);
+        game->winCondition = InitializeWinCondition(game->world, game->camera);
+    }
 }
 
 /**
@@ -711,6 +743,12 @@ bool GameLoadLevel(Game* game, int levelId) {
         return false;
     }
 
+    // Create a new win condition for the loaded level
+    if (game->winCondition) {
+        WinConditionDestroy(game->winCondition);
+    }
+    game->winCondition = InitializeWinCondition(game->world, game->camera);
+
     // Reset player and ball positions
     GameReset(game);
 
@@ -834,7 +872,41 @@ void InitializeWorldLayoutWithSnakeBoss(World* world, GameCamera* camera) {
     TraceLog(LOG_INFO, "Created custom arena for snake boss");
 }
 
+/**
+ * @brief Initialize win condition in world
+ *
+ * Helper function to set up the win condition in the world.
+ *
+ * @param world Pointer to world
+ * @param camera Pointer to camera
+ * @return WinCondition* Created win condition
+ */
+WinCondition* InitializeWinCondition(World* world, GameCamera* camera) {
+    if (!world) return NULL;
 
+    // Calculate center of the world in pixels
+    float centerX = WIN_HOLE_DEFAULT_X*(world->width * TILE_WIDTH) / 2.0f;
+    float centerY = WIN_HOLE_DEFAULT_Y*(world->height * TILE_HEIGHT) / 2.0f;
+    //float centerX = (world->width * TILE_WIDTH) / 2.0f;
+    //float centerY = (world->height * TILE_HEIGHT) / 2.0f;
+
+    // Create the win condition at the center of the world
+    WinCondition* winCondition = WinConditionCreate(
+        centerX,
+        centerY,
+        WIN_HOLE_RADIUS
+    );
+
+    if (!winCondition) {
+        TraceLog(LOG_ERROR, "Failed to create win condition");
+        return NULL;
+    }
+
+    TraceLog(LOG_INFO, "Initialized win condition at center of world (%.1f, %.1f)",
+        centerX, centerY);
+
+    return winCondition;
+}
 
 
 
