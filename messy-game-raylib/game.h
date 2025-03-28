@@ -4,20 +4,20 @@
  *
  * This file defines the core game system that coordinates all other systems.
  */
-
 #ifndef MESSY_GAME_GAME_H
 #define MESSY_GAME_GAME_H
-
 #include <stdbool.h>
 #include "renderer.h"
 #include "camera.h"
 #include "textures.h"
+
 #include "entity.h"
 #include "player.h"
 #include "ball.h"
 #include "world.h"
 #include "input.h"
 #include "snake_boss.h"
+#include "win_condition.h" // Added win condition header
 
  /**
   * @brief Game states enumeration
@@ -42,22 +42,24 @@ typedef enum {
  * Central structure that coordinates all game systems.
  */
 typedef struct {
-    GameState state;             // Current game state
-    GameState prevState;         // Previous game state
-    bool isRunning;              // Whether game is running
-    float gameTime;              // Total game time
-    float deltaTime;             // Time since last update
-    int fps;                     // Current FPS
-    Renderer* renderer;          // Rendering system
-    GameCamera* camera;          // Camera system
-    TextureManager* textures;    // Texture manager
-    InputManager* input;         // Input system
-    World* world;                // Game world
-    Entity* player;              // Player entity
-    Entity* ball;                // Ball entity
-    Entity** entities;           // Array of all entities
-    int entityCount;             // Number of entities
-    int entityCapacity;          // Capacity of entities array
+    GameState state; // Current game state
+    GameState prevState; // Previous game state
+    bool isRunning; // Whether game is running
+
+    float gameTime; // Total game time
+    float deltaTime; // Time since last update
+    int fps; // Current FPS
+    Renderer* renderer; // Rendering system
+    GameCamera* camera; // Camera system
+    TextureManager* textures; // Texture manager
+    InputManager* input; // Input system
+    World* world; // Game world
+    Entity* player; // Player entity
+    Entity* ball; // Ball entity
+    Entity** entities; // Array of all entities
+    int entityCount; // Number of entities
+    int entityCapacity; // Capacity of entities array
+    WinCondition* winCondition; // Win condition system
     // Add more game attributes as needed
 } Game;
 
@@ -104,17 +106,28 @@ void GameUpdate(Game* game);
  *
  * @param game Pointer to game
  */
+void GameRender(Game* game);
 
- /**
-  * @brief Initialize world layout
-  *
-  * Helper function to set up the initial world layout with walls and obstacles.
-  *
-  * @param world Pointer to world
-  */
+/**
+ * @brief Initialize world layout
+ *
+ * Helper function to set up the initial world layout with walls and obstacles.
+ *
+ * @param world Pointer to world
+ * @param camera Pointer to camera
+ */
 void InitializeWorldLayout(World* world, GameCamera* camera);
 
-void GameRender(Game* game);
+/**
+ * @brief Initialize win condition in world
+ *
+ * Helper function to set up the win condition in the world.
+ *
+ * @param world Pointer to world
+ * @param camera Pointer to camera
+ * @return WinCondition* Created win condition
+ */
+WinCondition* InitializeWinCondition(World* world, GameCamera* camera);
 
 /**
  * @brief Shutdown game systems
@@ -191,30 +204,24 @@ Entity* GameSetBall(Game* game, BallType ballType);
 bool GameLoadLevel(Game* game, int levelId);
 
 /**
-* Add these function declarations to game.h (before the #endif)
-*/
-
-/**
-* @brief Set snake boss for game
-*
-* @param game Pointer to game
-* @param gridX Initial X position in grid coordinates
-* @param gridY Initial Y position in grid coordinates
-* @param initialLength Initial number of segments
-* @return Entity* Pointer to snake boss entity
-*/
+ * @brief Set snake boss for game
+ *
+ * @param game Pointer to game
+ * @param gridX Initial X position in grid coordinates
+ * @param gridY Initial Y position in grid coordinates
+ * @param initialLength Initial number of segments
+ * @return Entity* Pointer to snake boss entity
+ */
 Entity* GameSetSnakeBoss(Game* game, int gridX, int gridY, int initialLength);
 
 /**
-* @brief Initialize world layout with snake boss
-*
-* Helper function to set up a world layout with a snake boss enemy.
-*
-* @param world Pointer to world
-* @param camera Pointer to camera
-*/
+ * @brief Initialize world layout with snake boss
+ *
+ * Helper function to set up a world layout with a snake boss enemy.
+ *
+ * @param world Pointer to world
+ * @param camera Pointer to camera
+ */
 void InitializeWorldLayoutWithSnakeBoss(World* world, GameCamera* camera);
-
-
 
 #endif // MESSY_GAME_GAME_H
