@@ -142,7 +142,6 @@
     <ClCompile Include="snake_boss.c" />
     <ClCompile Include="textures.c" />
     <ClCompile Include="tile.c" />
-    <ClCompile Include="win_condition.c" />
     <ClCompile Include="world.c" />
   </ItemGroup>
   <ItemGroup>
@@ -158,8 +157,10 @@
     <ClInclude Include="snake_boss.h" />
     <ClInclude Include="textures.h" />
     <ClInclude Include="tile.h" />
-    <ClInclude Include="win_condition.h" />
     <ClInclude Include="world.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
