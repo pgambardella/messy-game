@@ -278,22 +278,22 @@ Rectangle TextureManagerGetTileRect(TextureManager* manager, TextureID id, int t
 }
 
 /**
- * @brief Load game assets
- *
- * Convenience function to load all initial game assets.
- *
- * @param manager Pointer to texture manager
- * @return bool Whether all assets were loaded successfully
- */
+* @brief Load game assets
+*
+* Convenience function to load all initial game assets.
+*
+* @param manager Pointer to texture manager
+* @return bool Whether all assets were loaded successfully
+*/
 bool TextureManagerLoadGameAssets(TextureManager* manager) {
     if (!manager) return false;
 
     bool success = true;
 
-    // Load tilemap
+    // Load tilemap - using 25x25 tile size
     success &= TextureManagerLoad(manager, TEXTURE_TILEMAP, TILEMAP_ASSET_PATH, TILE_WIDTH, TILE_HEIGHT);
 
-    // Load player sprites
+    // Load player sprites - using 25x25 sprite size for new spritesheet
     success &= TextureManagerLoad(manager, TEXTURE_PLAYER, PLAYER_ASSET_PATH, SPRITE_WIDTH, SPRITE_HEIGHT);
 
     // Add more asset loading here as needed

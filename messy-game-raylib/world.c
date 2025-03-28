@@ -101,6 +101,22 @@ void WorldRender(World* world) {
             Camera2D camera = { 0 };
             camera.zoom = CAMERA_ZOOM;
             RoomRender(currentRoom, &camera);
+
+            // Add collision debug visualization for rooms
+            if (DEBUG_SHOW_COLLISIONS) {
+                for (int x = 0; x < currentRoom->width; x++) {
+                    for (int y = 0; y < currentRoom->height; y++) {
+                        Tile* tile = RoomGetTile(currentRoom, x, y);
+                        if (tile && (tile->type == TILE_TYPE_WALL || TileHasFlags(tile, TILE_FLAG_SOLID))) {
+                            // Draw collision box
+                            float worldX = (currentRoom->x + x) * TILE_WIDTH;
+                            float worldY = (currentRoom->y + y) * TILE_HEIGHT;
+                            DrawRectangle(worldX, worldY, TILE_WIDTH, TILE_HEIGHT, DEBUG_COLLISION_COLOR);
+                        }
+                    }
+                }
+            }
+
             return;
         }
     }
@@ -127,9 +143,48 @@ void WorldRender(World* world) {
                     TILE_FLOOR_BORDER_COLOR
                 );
             }
+
+            // Debug visualization for collision areas
+            if (DEBUG_SHOW_COLLISIONS) {
+                // Check if this position would cause a collision
+                if (WorldIsWallAtPosition(world, x * TILE_WIDTH + TILE_WIDTH / 2, y * TILE_HEIGHT + TILE_HEIGHT / 2)) {
+                    DrawRectangle(
+                        x * TILE_WIDTH,
+                        y * TILE_HEIGHT,
+                        TILE_WIDTH,
+                        TILE_HEIGHT,
+                        DEBUG_COLLISION_COLOR
+                    );
+                }
+            }
         }
     }
+
+    // Visible area debug visualization
+    if (DEBUG_SHOW_COLLISIONS) {
+        float cameraZoom = CAMERA_ZOOM;
+        int screenWidthInTiles = (int)(SCREEN_WIDTH / (TILE_WIDTH * cameraZoom));
+        int screenHeightInTiles = (int)(SCREEN_HEIGHT / (TILE_HEIGHT * cameraZoom));
+
+        // Calculate the visible area
+        int centerX = world->width / 2;
+        int centerY = world->height / 2;
+        int leftEdge = centerX - (screenWidthInTiles / 2);
+        int rightEdge = centerX + (screenWidthInTiles / 2);
+        int topEdge = centerY - (screenHeightInTiles / 2);
+        int bottomEdge = centerY + (screenHeightInTiles / 2);
+
+        // Draw a frame around the visible area
+        DrawRectangleLines(
+            leftEdge * TILE_WIDTH,
+            topEdge * TILE_HEIGHT,
+            (rightEdge - leftEdge + 1) * TILE_WIDTH,
+            (bottomEdge - topEdge + 1) * TILE_HEIGHT,
+            RED
+        );
+    }
 }
+
 /**
 * @brief Check if a position has a wall or is outside world boundaries
 *
@@ -150,59 +205,47 @@ bool WorldIsWallAtPosition(World* world, float x, float y) {
     int tileX = (int)(x / TILE_WIDTH);
     int tileY = (int)(y / TILE_HEIGHT);
 
-    // Log collision check for debugging
-    // TraceLog(LOG_DEBUG, "Checking wall at world pos (%.1f,%.1f) -> tile (%d,%d)", x, y, tileX, tileY);
-
     // Check bounds
     if (tileX < 0 || tileX >= world->width || tileY < 0 || tileY >= world->height) {
-        // TraceLog(LOG_DEBUG, "OUT OF BOUNDS at (%d,%d)", tileX, tileY);
         return true; // Out of bounds is considered a wall
     }
 
-    // IMPORTANT: This is a simplification. In your implementation, check the actual
-    // tile type in your tile data structure. For example:
-    // return world->tiles[tileY * world->width + tileX].type == TILE_TYPE_WALL;
-
-    // For now, we'll use hardcoded wall positions
-
-    // Get visible dimensions based on camera zoom
+    // Calculate dimensions using 25x25 tiles
     float cameraZoom = CAMERA_ZOOM;
     int screenWidthInTiles = (int)(SCREEN_WIDTH / (TILE_WIDTH * cameraZoom));
     int screenHeightInTiles = (int)(SCREEN_HEIGHT / (TILE_HEIGHT * cameraZoom));
 
-    // Calculate visible area
+    // Calculate visible area - FIX TOP AND RIGHT COLLISIONS
     int centerX = world->width / 2;
     int centerY = world->height / 2;
 
+    // Adjusted edge calculations to align with visual walls
     int leftEdge = centerX - (screenWidthInTiles / 2);
-    int rightEdge = centerX + (screenWidthInTiles / 2);
-    int topEdge = centerY - (screenHeightInTiles / 2);
+    int rightEdge = centerX + (screenWidthInTiles / 2) - 1; // +1 to fix right collider
+    int topEdge = centerY - (screenHeightInTiles / 2) - 1;  // -1 to fix top collider
     int bottomEdge = centerY + (screenHeightInTiles / 2);
 
-    // Check if position is at visible border
+    // Border collision logic with fixed positions
     if ((tileX == leftEdge || tileX == rightEdge) && (tileY >= topEdge && tileY <= bottomEdge)) {
         return true;
     }
-
     if ((tileY == topEdge || tileY == bottomEdge) && (tileX >= leftEdge && tileX <= rightEdge)) {
         return true;
     }
 
-    // Check the middle obstacles
-    // Horizontal wall in the middle
-    if (tileY == centerY && abs(tileX - centerX) <= 5) {
+    // Horizontal wall at exact center
+    if (tileY == centerY && abs(tileX - centerX) <= 2) {
         return true;
     }
 
-    // Vertical walls on sides
-    if ((tileX == centerX - 10 || tileX == centerX + 10) && abs(tileY - centerY) <= 3) {
+    // Vertical walls 4 tiles from center
+    if ((tileX == centerX - 4 || tileX == centerX + 4) && abs(tileY - centerY) <= 1) {
         return true;
     }
 
     // Not a wall
     return false;
 }
-
 
 
 /**
@@ -253,7 +296,7 @@ World* WorldLoad(const char* filename) {
     for (int j = centerY - 3; j <= centerY + 3; j++) {
         WorldSetTileType(world, centerX - 10, j, TILE_TYPE_WALL);
         WorldSetTileType(world, centerX + 10, j, TILE_TYPE_WALL);
-    }
+    }//*/
 
     TraceLog(LOG_INFO, "Created default world (no actual file loaded)");
 
@@ -459,4 +502,80 @@ bool WorldChangeRoom(World* world, int roomIndex) {
     world->currentRoom = roomIndex;
 
     return true;
+}
+
+/**
+* @brief Draw debug visualization of collision areas
+*
+* This function explicitly renders all collision areas in the world.
+* It is separate from normal rendering and only used in debug mode.
+*
+* @param world Pointer to world
+*/
+void DebugVisualizeCollisions(World* world) {
+    if (!world || !DEBUG_SHOW_COLLISIONS) return;
+
+    // Visualize all tiles in the world that would cause collision
+    for (int x = 0; x < world->width; x++) {
+        for (int y = 0; y < world->height; y++) {
+            float worldX = x * TILE_WIDTH;
+            float worldY = y * TILE_HEIGHT;
+            float centerX = worldX + TILE_WIDTH / 2;
+            float centerY = worldY + TILE_HEIGHT / 2;
+
+            // Check if this position would cause a collision
+            if (WorldIsWallAtPosition(world, centerX, centerY)) {
+                DrawRectangle(
+                    worldX,
+                    worldY,
+                    TILE_WIDTH,
+                    TILE_HEIGHT,
+                    DEBUG_COLLISION_COLOR
+                );
+
+                // Draw a border for better visibility
+                DrawRectangleLines(
+                    worldX,
+                    worldY,
+                    TILE_WIDTH,
+                    TILE_HEIGHT,
+                    RED
+                );
+            }
+        }
+    }
+
+    // Visualize middle obstacles
+    int gridCenterX = world->width / 2;
+    int gridCenterY = world->height / 2;
+
+    // Visualize horizontal wall in the middle
+    for (int x = gridCenterX - 2; x <= gridCenterX + 2; x++) {
+        DrawRectangle(
+            x * TILE_WIDTH,
+            gridCenterY * TILE_HEIGHT,
+            TILE_WIDTH,
+            TILE_HEIGHT,
+            RED
+        );
+    }
+
+    // Visualize vertical walls on sides
+    for (int y = gridCenterY - 1; y <= gridCenterY + 1; y++) {
+        DrawRectangle(
+            (gridCenterX - 4) * TILE_WIDTH,
+            y * TILE_HEIGHT,
+            TILE_WIDTH,
+            TILE_HEIGHT,
+            RED
+        );
+
+        DrawRectangle(
+            (gridCenterX + 4) * TILE_WIDTH,
+            y * TILE_HEIGHT,
+            TILE_WIDTH,
+            TILE_HEIGHT,
+            RED
+        );
+    }
 }

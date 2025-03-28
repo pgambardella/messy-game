@@ -9,17 +9,17 @@
 #include "player.h"
 
 // Constants specific to the snake boss
-#define SNAKE_INITIAL_MOVE_INTERVAL 0.2f   // Initial time between moves in seconds
-#define SNAKE_MIN_MOVE_INTERVAL 0.05f       // Minimum time between moves (fastest speed)
-#define SNAKE_INTERVAL_DECREASE 0.05f      // How much to decrease interval per segment
-#define SNAKE_GROW_TIME 2.0f               // Time for growth animation
-#define SNAKE_SHRINK_TIME 2.0f             // Time for shrink animation
-#define SNAKE_HEAD_RADIUS 6.0f             // Radius of the snake head
+#define SNAKE_INITIAL_MOVE_INTERVAL 0.2f // Initial time between moves in seconds
+#define SNAKE_MIN_MOVE_INTERVAL 0.05f // Minimum time between moves (fastest speed)
+#define SNAKE_INTERVAL_DECREASE 0.05f // How much to decrease interval per segment
+#define SNAKE_GROW_TIME 2.0f // Time for growth animation
+#define SNAKE_SHRINK_TIME 2.0f // Time for shrink animation
+#define SNAKE_HEAD_RADIUS 15.0f // Radius of the snake head (increased for 25x25 tiles)
 
 // Snake appearance configuration
-#define SNAKE_SEGMENT_WIDTH_TILES 2       // Width of snake segment in tiles (default: 2)
-#define SNAKE_SEGMENT_HEIGHT_TILES 2      // Height of snake segment in tiles (default: 2)
-#define SNAKE_HEAD_RADIUS_FACTOR 1.5f     // Head radius as a factor of segment size (default: 1.5)
+#define SNAKE_SEGMENT_WIDTH_TILES 1.2f // Width of snake segment in tiles (default: 2)
+#define SNAKE_SEGMENT_HEIGHT_TILES 1.2f // Height of snake segment in tiles (default: 2)
+#define SNAKE_HEAD_RADIUS_FACTOR 1.3f // Head radius as a factor of segment size (default: 1.5)
 
 // Derived size calculations - do not modify these directly
 #define SNAKE_SEGMENT_WIDTH (TILE_WIDTH * SNAKE_SEGMENT_WIDTH_TILES)

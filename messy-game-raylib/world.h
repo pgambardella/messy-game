@@ -153,4 +153,14 @@ bool WorldChangeRoom(World* world, int roomIndex);
  */
 void WorldGetVisibleArea(World* world, Camera2D* camera, int* startTileX, int* startTileY, int* endTileX, int* endTileY);
 
+/**
+* @brief Draw debug visualization of collision areas
+*
+* This function explicitly renders all collision areas in the world.
+* It is separate from normal rendering and only used in debug mode.
+*
+* @param world Pointer to world
+*/
+void DebugVisualizeCollisions(World* world);
+
 #endif // MESSY_GAME_WORLD_H

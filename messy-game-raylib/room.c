@@ -1,11 +1,10 @@
 /**
- * @file room.c
- * @brief Implementation of room system
- *
- * This file contains the implementation of room-related functions for
- * creating, managing, and rendering rooms in the game world.
- */
-
+* @file room.c
+* @brief Implementation of room system
+*
+* This file contains the implementation of room-related functions for
+* creating, managing, and rendering rooms in the game world.
+*/
 #include "room.h"
 #include "config.h"
 #include "camera.h"
@@ -13,19 +12,19 @@
 #include <stdio.h>
 #include <string.h>
 
- /**
-  * @brief Create a new room
-  *
-  * Allocates and initializes a new room with the specified properties.
-  *
-  * @param id Unique room ID
-  * @param type Room type
-  * @param x Room X position in world grid
-  * @param y Room Y position in world grid
-  * @param width Width of room in tiles
-  * @param height Height of room in tiles
-  * @return Room* Pointer to the created room or NULL if failed
-  */
+/**
+* @brief Create a new room
+*
+* Allocates and initializes a new room with the specified properties.
+*
+* @param id Unique room ID
+* @param type Room type
+* @param x Room X position in world grid
+* @param y Room Y position in world grid
+* @param width Width of room in tiles
+* @param height Height of room in tiles
+* @return Room* Pointer to the created room or NULL if failed
+*/
 Room* RoomCreate(int id, RoomType type, int x, int y, int width, int height) {
     // Allocate memory for the room
     Room* room = (Room*)malloc(sizeof(Room));
@@ -136,10 +135,10 @@ Room* RoomCreate(int id, RoomType type, int x, int y, int width, int height) {
 }
 
 /**
- * @brief Destroy room and free resources
- *
- * @param room Pointer to room
- */
+* @brief Destroy room and free resources
+*
+* @param room Pointer to room
+*/
 void RoomDestroy(Room* room) {
     if (!room) return;
 
@@ -168,14 +167,14 @@ void RoomDestroy(Room* room) {
 }
 
 /**
- * @brief Update room state
- *
- * Updates the state of a room and its contents for the current frame.
- * Handles room-specific logic, animations, and events.
- *
- * @param room Pointer to room
- * @param deltaTime Time elapsed since last update in seconds
- */
+* @brief Update room state
+*
+* Updates the state of a room and its contents for the current frame.
+* Handles room-specific logic, animations, and events.
+*
+* @param room Pointer to room
+* @param deltaTime Time elapsed since last update in seconds
+*/
 void RoomUpdate(Room* room, float deltaTime) {
     if (!room) return;
 
@@ -192,8 +191,31 @@ void RoomUpdate(Room* room, float deltaTime) {
     if (roomTime > 1000.0f) {
         roomTime = 0.0f;
     }
+}
 
-    // Nothing else to do in this stub implementation
+/**
+* @brief Determine if a wall should be rendered as vertical
+*
+* Checks if a wall tile is in a position that should be drawn as vertical.
+*
+* @param room Pointer to room
+* @param x X position in room
+* @param y Y position in room
+* @return bool Whether the wall should be rendered vertically
+*/
+bool IsVerticalWall(Room* room, int x, int y) {
+    if (!room) return false;
+
+    // Calculate world center coordinates
+    int centerX = room->width / 2;
+    int centerY = room->height / 2;
+
+    // Check if this is one of the vertical walls
+    if ((x == centerX - 4 || x == centerX + 4) && abs(y - centerY) <= 1) {
+        return true;
+    }
+
+    return false;
 }
 
 /**
@@ -212,6 +234,10 @@ void RoomRender(Room* room, Camera2D* camera) {
     float roomX = room->x * TILE_WIDTH;
     float roomY = room->y * TILE_HEIGHT;
 
+    // Calculate center of the room for obstacle placement
+    int centerX = room->width / 2;
+    int centerY = room->height / 2;
+
     // Draw floor tiles first (as a background)
     for (int x = 0; x < room->width; x++) {
         for (int y = 0; y < room->height; y++) {
@@ -220,22 +246,22 @@ void RoomRender(Room* room, Camera2D* camera) {
 
             // Check if this is a wall or not
             bool isWall = false;
-            if (x == 0 || y == 0 || x == room->width - 1 || y == room->height - 1) {
-                isWall = true; // Border walls
-            }
+            bool isVertical = false;
 
-            // Add some obstacles in middle (matching original game)
-            int centerX = room->width / 2;
-            int centerY = room->height / 2;
+            // Border walls
+            if (x == 0 || y == 0 || x == room->width - 1 || y == room->height - 1) {
+                isWall = true;
+            }
 
             // Horizontal wall in the middle
-            if (y == centerY && abs(x - centerX) <= 5) {
+            if (y == centerY && abs(x - centerX) <= 2) {
                 isWall = true;
             }
 
-            // Vertical walls on sides
-            if ((x == centerX - 10 || x == centerX + 10) && abs(y - centerY) <= 3) {
+            // Vertical walls on sides - THIS IS THE KEY PART THAT NEEDS FIXING
+            if ((x == centerX - 4 || x == centerX + 4) && abs(y - centerY) <= 1) {
                 isWall = true;
+                isVertical = true; // Mark as vertical wall for special rendering
             }
 
             if (isWall) {
@@ -247,6 +273,26 @@ void RoomRender(Room* room, Camera2D* camera) {
                     TILE_HEIGHT,
                     TILE_WALL_COLOR
                 );
+
+                // For vertical walls, add visual cues
+                if (isVertical) {
+                    // Add vertical lines to emphasize vertical orientation
+                    DrawLine(
+                        (int)tileX + TILE_WIDTH / 4,
+                        (int)tileY,
+                        (int)tileX + TILE_WIDTH / 4,
+                        (int)tileY + TILE_HEIGHT,
+                        DARKGRAY
+                    );
+
+                    DrawLine(
+                        (int)tileX + TILE_WIDTH * 3 / 4,
+                        (int)tileY,
+                        (int)tileX + TILE_WIDTH * 3 / 4,
+                        (int)tileY + TILE_HEIGHT,
+                        DARKGRAY
+                    );
+                }
 
                 // Only draw border if it's not transparent
                 if (TILE_WALL_BORDER_COLOR.a > 0) {
@@ -301,22 +347,24 @@ void RoomRender(Room* room, Camera2D* camera) {
         BLACK
     );
 }
+
 /**
- * @brief Set tile at position in room
- *
- * @param room Pointer to room
- * @param x X position in room
- * @param y Y position in room
- * @param type Tile type to set
- * @return true Set successful
- * @return false Set failed (out of bounds)
- */
+* @brief Set tile at position in room
+*
+* @param room Pointer to room
+* @param x X position in room
+* @param y Y position in room
+* @param type Tile type to set
+* @return true Set successful
+* @return false Set failed (out of bounds)
+*/
 bool RoomSetTile(Room* room, int x, int y, TileType type) {
     if (!room || !room->tiles) return false;
 
     // Check bounds
     if (x < 0 || x >= room->width || y < 0 || y >= room->height) {
-        TraceLog(LOG_WARNING, "Attempted to set tile outside room bounds: (%d, %d)", x, y);
+        TraceLog(LOG_WARNING, "Attempted to set tile outside room bounds: (%d, %d)",
+            x, y);
         return false;
     }
 
@@ -336,13 +384,13 @@ bool RoomSetTile(Room* room, int x, int y, TileType type) {
 }
 
 /**
- * @brief Get tile at position in room
- *
- * @param room Pointer to room
- * @param x X position in room
- * @param y Y position in room
- * @return Tile* Pointer to tile or NULL if out of bounds
- */
+* @brief Get tile at position in room
+*
+* @param room Pointer to room
+* @param x X position in room
+* @param y Y position in room
+* @return Tile* Pointer to tile or NULL if out of bounds
+*/
 Tile* RoomGetTile(Room* room, int x, int y) {
     if (!room || !room->tiles) return NULL;
 
@@ -355,14 +403,14 @@ Tile* RoomGetTile(Room* room, int x, int y) {
 }
 
 /**
- * @brief Add connection to another room
- *
- * @param room Pointer to room
- * @param direction Direction of connection
- * @param connectedRoom Pointer to connected room
- * @return true Connection added successfully
- * @return false Connection failed
- */
+* @brief Add connection to another room
+*
+* @param room Pointer to room
+* @param direction Direction of connection
+* @param connectedRoom Pointer to connected room
+* @return true Connection added successfully
+* @return false Connection failed
+*/
 bool RoomAddConnection(Room* room, ConnectionDirection direction, Room* connectedRoom) {
     if (!room || !connectedRoom) return false;
 
@@ -379,9 +427,9 @@ bool RoomAddConnection(Room* room, ConnectionDirection direction, Room* connecte
     int index = -1;
     switch (direction) {
     case CONNECTION_NORTH: index = 0; break;
-    case CONNECTION_EAST:  index = 1; break;
+    case CONNECTION_EAST: index = 1; break;
     case CONNECTION_SOUTH: index = 2; break;
-    case CONNECTION_WEST:  index = 3; break;
+    case CONNECTION_WEST: index = 3; break;
     default: break;
     }
 
@@ -423,26 +471,25 @@ bool RoomAddConnection(Room* room, ConnectionDirection direction, Room* connecte
 }
 
 /**
- * @brief Check if room has connection in direction
- *
- * @param room Pointer to room
- * @param direction Direction to check
- * @return true Connection exists
- * @return false No connection
- */
+* @brief Check if room has connection in direction
+*
+* @param room Pointer to room
+* @param direction Direction to check
+* @return true Connection exists
+* @return false No connection
+*/
 bool RoomHasConnection(Room* room, ConnectionDirection direction) {
     if (!room) return false;
-
     return (room->connections & direction) != 0;
 }
 
 /**
- * @brief Get connected room in direction
- *
- * @param room Pointer to room
- * @param direction Direction to check
- * @return Room* Pointer to connected room or NULL if no connection
- */
+* @brief Get connected room in direction
+*
+* @param room Pointer to room
+* @param direction Direction to check
+* @return Room* Pointer to connected room or NULL if no connection
+*/
 Room* RoomGetConnected(Room* room, ConnectionDirection direction) {
     if (!room) return NULL;
 
@@ -455,9 +502,9 @@ Room* RoomGetConnected(Room* room, ConnectionDirection direction) {
     int index = -1;
     switch (direction) {
     case CONNECTION_NORTH: index = 0; break;
-    case CONNECTION_EAST:  index = 1; break;
+    case CONNECTION_EAST: index = 1; break;
     case CONNECTION_SOUTH: index = 2; break;
-    case CONNECTION_WEST:  index = 3; break;
+    case CONNECTION_WEST: index = 3; break;
     default: break;
     }
 
@@ -469,12 +516,12 @@ Room* RoomGetConnected(Room* room, ConnectionDirection direction) {
 }
 
 /**
- * @brief Generate room layout based on type
- *
- * Creates a default layout for the room based on its type.
- *
- * @param room Pointer to room
- */
+* @brief Generate room layout based on type
+*
+* Creates a default layout for the room based on its type.
+*
+* @param room Pointer to room
+*/
 void RoomGenerateLayout(Room* room) {
     if (!room) return;
 
@@ -496,18 +543,28 @@ void RoomGenerateLayout(Room* room) {
         }
     }
 
+    // Get center coordinates
+    int centerX = room->width / 2;
+    int centerY = room->height / 2;
+
     // Add type-specific features
     switch (room->type) {
     case ROOM_TYPE_NORMAL:
-        // Normal room has no special features
+        // Add a horizontal wall in the middle
+        for (int x = centerX - 2; x <= centerX + 2; x++) {
+            RoomSetTile(room, x, centerY, TILE_TYPE_WALL);
+        }
+
+        // Add vertical walls - properly marked as vertical
+        for (int y = centerY - 1; y <= centerY + 1; y++) {
+            RoomSetTile(room, centerX - 4, y, TILE_TYPE_WALL);
+            RoomSetTile(room, centerX + 4, y, TILE_TYPE_WALL);
+        }
         break;
 
     case ROOM_TYPE_BOSS:
         // Boss room has a larger open area with maybe some obstacles
     {
-        int centerX = room->width / 2;
-        int centerY = room->height / 2;
-
         // Add some pillars
         if (room->width > 8 && room->height > 8) {
             RoomSetTile(room, centerX - 3, centerY - 3, TILE_TYPE_WALL);
@@ -521,16 +578,12 @@ void RoomGenerateLayout(Room* room) {
     case ROOM_TYPE_TREASURE:
         // Treasure room has a special center area
     {
-        int centerX = room->width / 2;
-        int centerY = room->height / 2;
-
         // Add a special floor in the center
         if (room->width > 5 && room->height > 5) {
             for (int x = centerX - 1; x <= centerX + 1; x++) {
                 for (int y = centerY - 1; y <= centerY + 1; y++) {
                     // Use a special tile type for the treasure area
                     RoomSetTile(room, x, y, TILE_TYPE_EMPTY);
-                    // In a real implementation, you might have a special treasure tile type
                 }
             }
         }
@@ -540,9 +593,6 @@ void RoomGenerateLayout(Room* room) {
     case ROOM_TYPE_SHOP:
         // Shop room has a counter
     {
-        int centerX = room->width / 2;
-        int centerY = room->height / 2;
-
         // Add a counter along the top
         if (room->height > 5) {
             for (int x = centerX - 2; x <= centerX + 2; x++) {
@@ -554,7 +604,6 @@ void RoomGenerateLayout(Room* room) {
 
     case ROOM_TYPE_SECRET:
         // Secret room might have a different floor texture
-        // In a real implementation, you might have a special secret tile type
         break;
 
     default:
@@ -565,40 +614,37 @@ void RoomGenerateLayout(Room* room) {
 }
 
 /**
- * @brief Load room from file
- *
- * @param filename Path to room file
- * @return Room* Pointer to loaded room
- */
+* @brief Load room from file
+*
+* @param filename Path to room file
+* @return Room* Pointer to loaded room
+*/
 Room* RoomLoad(const char* filename) {
     if (!filename) return NULL;
 
     // In a real implementation, this would read room data from a file
     // For this stub, we'll create a default room
-
     TraceLog(LOG_INFO, "Would load room from file: %s", filename);
     TraceLog(LOG_INFO, "Creating default room instead");
 
     // Create a default room
     Room* room = RoomCreate(1, ROOM_TYPE_NORMAL, 0, 0, 10, 10);
-
     return room;
 }
 
 /**
- * @brief Save room to file
- *
- * @param room Pointer to room
- * @param filename Path to save file
- * @return true Save successful
- * @return false Save failed
- */
+* @brief Save room to file
+*
+* @param room Pointer to room
+* @param filename Path to save file
+* @return true Save successful
+* @return false Save failed
+*/
 bool RoomSave(Room* room, const char* filename) {
     if (!room || !filename) return false;
 
     // In a real implementation, this would write room data to a file
     // For this stub, we'll just log what would happen
-
     TraceLog(LOG_INFO, "Would save room ID %d to file: %s", room->id, filename);
     TraceLog(LOG_INFO, "Room dimensions: %d x %d", room->width, room->height);
 

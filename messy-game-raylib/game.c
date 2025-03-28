@@ -127,13 +127,13 @@ void GameDestroy(Game* game) {
 }
 
 /**
- * @brief Initialize game systems
- *
- * This function initializes all game subsystems and loads initial assets.
- *
- * @param game Pointer to game
- * @return bool Whether initialization was successful
- */
+* @brief Initialize game systems
+*
+* This function initializes all game subsystems and loads initial assets.
+*
+* @param game Pointer to game
+* @return bool Whether initialization was successful
+*/
 bool GameInitialize(Game* game) {
     if (!game) return false;
 
@@ -186,10 +186,10 @@ bool GameInitialize(Game* game) {
         return false;
     }
 
-    // Create snake boss
+    // Create snake boss - adjusted for 25x25 tiles
     int centerX = game->world->width / 2;
     int centerY = game->world->height / 2;
-    Entity* snakeBoss = GameSetSnakeBoss(game, centerX + 15, centerY, 5);
+    Entity* snakeBoss = GameSetSnakeBoss(game, centerX + 5, centerY, 3); // Reduced initial length for smaller world
     if (!snakeBoss) {
         TraceLog(LOG_ERROR, "Failed to create snake boss");
         // Continue anyway, snake boss is not critical
@@ -203,7 +203,6 @@ bool GameInitialize(Game* game) {
 
     // Game is now running
     game->isRunning = true;
-
     return true;
 }
 
@@ -230,12 +229,14 @@ void GameRun(Game* game) {
 }
 
 /**
- * @brief Initialize world layout
- *
- * Helper function to set up the initial world layout with walls and obstacles.
- *
- * @param world Pointer to world
- */
+* @brief Initialize world layout
+*
+* Helper function to set up the initial world layout with
+* walls and obstacles.
+*
+* @param world Pointer to world
+* @param camera Pointer to camera
+*/
 void InitializeWorldLayout(World* world, GameCamera* camera) {
     if (!world) return;
 
@@ -248,17 +249,16 @@ void InitializeWorldLayout(World* world, GameCamera* camera) {
 
     // Define the visible area based on camera properties
     float cameraZoom = CAMERA_ZOOM;
-    int screenWidthInTiles = (int)(SCREEN_WIDTH / (TILE_WIDTH * cameraZoom));
-    int screenHeightInTiles = (int)(SCREEN_HEIGHT / (TILE_HEIGHT * cameraZoom));
+    float screenWidthInTiles = (SCREEN_WIDTH / (TILE_WIDTH * cameraZoom));
+    float screenHeightInTiles = (SCREEN_HEIGHT / (TILE_HEIGHT * cameraZoom));
 
     // Calculate the visible portion of the world
-    int centerX = world->width / 2;
-    int centerY = world->height / 2;
-
-    int leftEdge = centerX - (screenWidthInTiles / 2);
-    int rightEdge = centerX + (screenWidthInTiles / 2);
-    int topEdge = centerY - (screenHeightInTiles / 2);
-    int bottomEdge = centerY + (screenHeightInTiles / 2);
+    float centerX = world->width / 2;
+    float centerY = world->height / 2;
+    float leftEdge = centerX - (screenWidthInTiles / 2);
+    float rightEdge = centerX + (screenWidthInTiles / 2);
+    float topEdge = centerY - (screenHeightInTiles / 2);
+    float bottomEdge = centerY + (screenHeightInTiles / 2);
 
     TraceLog(LOG_INFO, "Visible area: left=%d, right=%d, top=%d, bottom=%d",
         leftEdge, rightEdge, topEdge, bottomEdge);
@@ -275,20 +275,20 @@ void InitializeWorldLayout(World* world, GameCamera* camera) {
     }
 
     // Add some walls in the middle for obstacles
-    // Small horizontal wall
-    for (int i = centerX - 5; i <= centerX + 5; i++) {
+    // Small horizontal wall - scale appropriately for 25x25 tiles
+    for (int i = centerX - 2; i <= centerX + 2; i++) {
         WorldSetTileType(world, i, centerY, TILE_TYPE_WALL);
     }
 
-    // Small vertical walls
-    for (int j = centerY - 3; j <= centerY + 3; j++) {
-        WorldSetTileType(world, centerX + 10, j, TILE_TYPE_WALL);
-        WorldSetTileType(world, centerX - 10, j, TILE_TYPE_WALL);
+    // Small vertical walls - scale appropriately for 25x25 tiles
+    for (int j = centerY - 1; j <= centerY + 1; j++) {
+        WorldSetTileType(world, centerX + 4, j, TILE_TYPE_WALL);
+        WorldSetTileType(world, centerX - 4, j, TILE_TYPE_WALL);
     }
 
     // Set up camera
     if (camera) {
-        camera->camera.target = (Vector2){ (float)(centerX * TILE_WIDTH), (float)(centerY * TILE_HEIGHT) };
+        camera->camera.target = (Vector2){ (centerX * TILE_WIDTH), (centerY * TILE_HEIGHT) };
         camera->camera.zoom = CAMERA_ZOOM;
     }
 }
@@ -316,44 +316,56 @@ void GameUpdate(Game* game) {
 
     // Update entities based on current game state
     if (game->state == GAME_STATE_PLAYING) {
-        // Update player
-        PlayerUpdate(game->player, game->world, game->deltaTime);
-
-        // Update ball
-        BallUpdate(game->ball, game->world, game->player, game->deltaTime);
-
-        // Update all other entities
-        for (int i = 0; i < game->entityCount; i++) {
-            Entity* entity = game->entities[i];
-
-            // Skip player and ball as they've already been updated
-            if (entity == game->player || entity == game->ball) continue;
-
-            EntityUpdate(entity, game->deltaTime);
-        }
-
-        // Update world
-        WorldUpdate(game->world, game->deltaTime);
-
-        // Update snake boss entities
-        for (int i = 0; i < game->entityCount; i++) {
-            Entity* entity = game->entities[i];
-            if (IsSnakeBoss(entity)) {
-                // Update the snake boss
-                SnakeBossUpdate(entity, game->world, game->ball, game->player, game->deltaTime);
+        // Check for player death first
+        if (game->player) {
+            PlayerData* playerData = PlayerGetData(game->player);
+            if (playerData && playerData->state != PLAYER_STATE_ALIVE) {
+                // Handle player death
+                if (PlayerHandleDeath(game->player, game->deltaTime)) {
+                    // Death sequence complete, reset the game
+                    GameReset(game);
+                    return; // Skip the rest of the update
+                }
             }
-        }
+            else {
+                // Update player if alive
+                PlayerUpdate(game->player, game->world, game->deltaTime);
 
-        // Update win condition
-        if (game->winCondition) {
-            WinConditionUpdate(
-                game->winCondition,
-                game->ball,
-                game->player,
-                game->entities,
-                game->entityCount,
-                game->deltaTime
-            );
+                // Update ball
+                BallUpdate(game->ball, game->world, game->player, game->deltaTime);
+
+                // Update all other entities
+                for (int i = 0; i < game->entityCount; i++) {
+                    Entity* entity = game->entities[i];
+                    // Skip player and ball as they've already been updated
+                    if (entity == game->player || entity == game->ball) continue;
+                    EntityUpdate(entity, game->deltaTime);
+                }
+
+                // Update world
+                WorldUpdate(game->world, game->deltaTime);
+
+                // Update snake boss entities
+                for (int i = 0; i < game->entityCount; i++) {
+                    Entity* entity = game->entities[i];
+                    if (IsSnakeBoss(entity)) {
+                        // Update the snake boss
+                        SnakeBossUpdate(entity, game->world, game->ball, game->player, game->deltaTime);
+                    }
+                }
+
+                // Update win condition
+                if (game->winCondition) {
+                    WinConditionUpdate(
+                        game->winCondition,
+                        game->ball,
+                        game->player,
+                        game->entities,
+                        game->entityCount,
+                        game->deltaTime
+                    );
+                }
+            }
         }
     }
 
@@ -362,71 +374,77 @@ void GameUpdate(Game* game) {
 }
 
 /**
- * @brief Render game
- *
- * Main game render function that renders all game elements.
- *
- * @param game Pointer to game
- */
+* @brief Render game
+*
+* Main game render function that renders all game elements.
+*
+* @param game Pointer to game
+*/
 void GameRender(Game* game) {
     if (!game) return;
 
     // Begin drawing
     RendererBeginFrame(game->renderer);
 
-    // Begin 2D camera mode
-    CameraBeginMode(game->camera);
+    // Check if player is dead and showing death screen
+    PlayerData* playerData = NULL;
+    if (game->player) {
+        playerData = PlayerGetData(game->player);
+    }
 
-    // Render world
-    WorldRender(game->world);
+    if (playerData && playerData->state == PLAYER_STATE_DEAD) {
+        // Only render the death screen
+        PlayerRenderDeathScreen(game->player);
+    }
+    else {
+        // Begin 2D camera mode
+        CameraBeginMode(game->camera);
 
-    // Render entities in proper order
-    for (int i = 0; i < game->entityCount; i++) {
-        // Skip player and ball for now (they'll be rendered separately)
-        if (game->entities[i] == game->player || game->entities[i] == game->ball) continue;
-        // Special rendering for snake boss
-        if (IsSnakeBoss(game->entities[i])) {
-            SnakeBossRender(game->entities[i]);
-            continue; // Skip the default EntityRender
+        // Render world
+        WorldRender(game->world);
+
+        // Debug visualization - call our new function
+        if (DEBUG_SHOW_COLLISIONS) {
+            DebugVisualizeCollisions(game->world);
         }
-        EntityRender(game->entities[i]);
-    }
 
-    // Render win condition
-    if (game->winCondition) {
-        WinConditionRender(game->winCondition);
-    }
+        // Render entities in proper order
+        for (int i = 0; i < game->entityCount; i++) {
+            // Skip player and ball for now (they'll be rendered separately)
+            if (game->entities[i] == game->player || game->entities[i] == game->ball) continue;
 
-    // Render ball
-    if (game->ball) {
-        BallRender(game->ball);
-    }
+            // Special rendering for snake boss
+            if (IsSnakeBoss(game->entities[i])) {
+                SnakeBossRender(game->entities[i]);
+                continue; // Skip the default EntityRender
+            }
 
-    // Render player on top
-    if (game->player) {
-        PlayerRender(game->player);
-    }
+            EntityRender(game->entities[i]);
+        }
 
-    // End 2D camera mode
-    CameraEndMode();
+        // Render win condition
+        if (game->winCondition) {
+            WinConditionRender(game->winCondition);
+        }
 
-    // Render HUD and UI elements (not affected by camera)
-    if (game->player) {
-        RendererDrawHUD(game->renderer, game->player);
-    }
+        // Render ball
+        if (game->ball) {
+            BallRender(game->ball);
+        }
 
-    /*/ Draw debug info if in debug mode
-    if (game->renderer->debugMode) {
-        DrawText(TextFormat("FPS: %d", game->fps), 10, 10, 20, WHITE);
-        DrawText(TextFormat("Entities: %d", game->entityCount), 10, 40, 20, WHITE);
-
+        // Render player on top
         if (game->player) {
-            Vector2 playerPos = { game->player->x, game->player->y };
-            DrawText(TextFormat("Player Pos: %.1f, %.1f", playerPos.x, playerPos.y), 10, 70, 20, WHITE);
+            PlayerRender(game->player);
         }
-    }//*/
 
+        // End 2D camera mode
+        CameraEndMode();
 
+        // Render HUD and UI elements (not affected by camera)
+        if (game->player) {
+            RendererDrawHUD(game->renderer, game->player);
+        }
+    }
 
     // End drawing
     RendererEndFrame(game->renderer);
@@ -844,10 +862,11 @@ void InitializeWorldLayoutWithSnakeBoss(World* world, GameCamera* camera) {
     int gridCenterY = world->height / 2;
 
     // Create a clear area for the snake to move in
-    int clearAreaLeft = gridCenterX + 10;  // Place on the right side of center
-    int clearAreaTop = gridCenterY - 5;
-    int clearAreaWidth = 15;
-    int clearAreaHeight = 10;
+    int clearAreaLeft = gridCenterX + 3; // Place on the right side of center 
+    // (adjusted for 25x25 tiles)
+    int clearAreaTop = gridCenterY - 2; // Adjusted for 25x25 tiles
+    int clearAreaWidth = 5; // Adjusted for 25x25 tiles
+    int clearAreaHeight = 4; // Adjusted for 25x25 tiles
 
     // Clear any walls in this area
     for (int x = clearAreaLeft; x < clearAreaLeft + clearAreaWidth; x++) {

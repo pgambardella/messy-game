@@ -43,15 +43,15 @@ void RendererEndFrame(Renderer* renderer) {
 }
 
 /**
- * @brief Draw HUD and UI elements
- *
- * This function draws the Heads-Up Display (HUD) and other UI elements
- * that provide game information to the player, such as health, score,
- * inventory, etc.
- *
- * @param renderer Pointer to renderer
- * @param player Pointer to player entity
- */
+* @brief Draw HUD and UI elements
+*
+* This function draws the Heads-Up Display (HUD) and other UI elements
+* that provide game information to the player, such as health, score,
+* inventory, etc.
+*
+* @param renderer Pointer to renderer
+* @param player Pointer to player entity
+*/
 void RendererDrawHUD(Renderer* renderer, Entity* player) {
     if (!renderer || !player) return;
 
@@ -61,53 +61,88 @@ void RendererDrawHUD(Renderer* renderer, Entity* player) {
         playerData = (PlayerData*)player->typeData;
     }
 
-    // Draw frame rate
-    DrawText(TextFormat("FPS: %d", GetFPS()), 10, 10, 20, WHITE);
+    // Draw frame rate in debug mode
+    if (renderer->debugMode) {
+        DrawText(TextFormat("FPS: %d", GetFPS()), 10, 10, 20, WHITE);
 
-    // Draw player position
-    DrawText(
-        TextFormat("Position: %.1f, %.1f", player->x, player->y),
-        10, 40, 20, WHITE
-    );
+        // Draw player position
+        DrawText(
+            TextFormat("Position: %.1f, %.1f", player->x, player->y),
+            10, 40, 20, WHITE
+        );
+    }
 
     // Draw health bar (if player data available)
     if (playerData) {
+        int barX = 10;
+        int barY = 10;
+        int barWidth = 200;
+        int barHeight = 20;
+
         // Draw health bar background
-        DrawRectangle(10, 70, 200, 20, GRAY);
+        DrawRectangle(barX, barY, barWidth, barHeight, GRAY);
 
         // Draw health bar fill (based on current/max health)
         float healthPercent = playerData->currentHealth / playerData->maxHealth;
-        DrawRectangle(10, 70, (int)(200 * healthPercent), 20, RED);
+
+        // Choose color based on health percentage
+        Color healthColor;
+        if (healthPercent > 0.7f) {
+            healthColor = GREEN;
+        }
+        else if (healthPercent > 0.3f) {
+            healthColor = YELLOW;
+        }
+        else {
+            healthColor = RED;
+        }
+
+        DrawRectangle(barX, barY, (int)(barWidth * healthPercent), barHeight, healthColor);
 
         // Draw health text
         DrawText(
             TextFormat("Health: %.0f/%.0f", playerData->currentHealth, playerData->maxHealth),
-            15, 72, 16, WHITE
+            barX + 5, barY + 2, 16, WHITE
         );
 
-        // Draw XP bar background (replacing mana bar)
-        DrawRectangle(10, 100, 200, 20, GRAY);
+        // Draw XP bar background
+        DrawRectangle(barX, barY + barHeight + 5, barWidth, barHeight, GRAY);
 
         // Draw XP bar fill
         float xpPercent = playerData->currentXP / playerData->maxXP;
-        DrawRectangle(10, 100, (int)(200 * xpPercent), 20, GOLD);
+        DrawRectangle(barX, barY + barHeight + 5, (int)(barWidth * xpPercent), barHeight, GOLD);
 
         // Draw XP text
         DrawText(
             TextFormat("XP: %.0f/%.0f", playerData->currentXP, playerData->maxXP),
-            15, 102, 16, WHITE
+            barX + 5, barY + barHeight + 7, 16, WHITE
         );
 
         // Draw player level
         DrawText(
             TextFormat("Level: %d", playerData->level),
-            10, 130, 20, GOLD
+            barX, barY + (barHeight + 5) * 2, 20, GOLD
         );
+
+        // Display player state in debug mode
+        if (renderer->debugMode) {
+            const char* stateText = "";
+            switch (playerData->state) {
+            case PLAYER_STATE_ALIVE: stateText = "ALIVE"; break;
+            case PLAYER_STATE_DYING: stateText = "DYING"; break;
+            case PLAYER_STATE_DEAD: stateText = "DEAD"; break;
+            default: stateText = "UNKNOWN"; break;
+            }
+
+            DrawText(
+                TextFormat("State: %s", stateText),
+                barX, barY + (barHeight + 5) * 3, 18, WHITE
+            );
+        }
     }
 
     // Draw game controls reminder (bottom of screen)
-    DrawText("WASD: Move | SPACE: Attack | E: Interact | R: Reset",
-        10, GetScreenHeight() - 30, 16, WHITE);
+    DrawText("WASD: Move | SPACE: Attack | R: Reset", 10, GetScreenHeight() - 30, 16, WHITE);
 }
 
 /**
